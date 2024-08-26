@@ -1,0 +1,23 @@
+---
+title: "Hands-on_Ex01"
+---
+```{r}
+mpsz = st_read(dsn = "data/geospatial/MasterPlan2014SubzoneBoundaryWebSHP", 
+                  layer = "MP14_SUBZONE_WEB_PL")
+```
+---
+```{r}
+cyclingpath = st_read(dsn = "data/geospatial/CyclingPath_Jul2024", 
+                         layer = "CyclingPathGazette")
+```
+```{r}
+preschool = st_read("data/geospatial/PreSchoolsLocation.kml")
+```
+```{r}
+st_geometry(mpsz)
+glimpse(mpsz)
+head(mpsz, n=5)  
+```
+```{r}
+plot(mpsz)
+```
