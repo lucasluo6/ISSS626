@@ -22,3 +22,55 @@ mpsz14_shp  = st_read(dsn = "data/geospatial/MasterPlan2014SubzoneBoundaryWebSHP
 st_write(mpsz14_shp,"data/MasterPlan2014SubzoneBoundaryWebKML.kml", delete_dsn=TRUE)
 mpsz14_kml = st_read("data/MasterPlan2014SubzoneBoundaryWebKML.kml")
 ```
+##to import mpsz19
+```{r}
+mpsz19_shp = st_read(dsn = "data/MPSZ-2019",layer = "MPSZ-2019") %>%
+  st_transform(crs = 3414)
+mpsz19_kml = st_read("data/MasterPlan2019SubzoneBoundaryNoSeaKML.kml")
+```
+###The code
+
+```{r}
+popdata2023 <- read_csv("data/aspatial/respopagesextod2023.csv")
+```
+
+```{r}
+popdata2023 <- popdata2023 %>%
+  group_by(PA, SZ, AG) %>%
+  summarise(`POP` = sum(`Pop`)) %>%
+  ungroup()%>%
+  pivot_wider(names_from=AG, 
+              values_from=POP) %>%
+  mutate(YOUNG = rowSums(.[3:6])
+         +rowSums(.[14])) %>%
+mutate(`ECONOMY ACTIVE` = rowSums(.[7:13]) # Aged 25 - 59
+         + rowSums(.[15])) %>% # Aged 60 - 64
+  mutate(`AGED` = rowSums(.[16:21])) %>%
+  mutate(`TOTAL` = rowSums(.[3:21])) %>%
+  mutate(`DEPENDENCY` = (`YOUNG` + `AGED`) 
+          / `ECONOMY ACTIVE`) %>%
+  select(`PA`, `SZ`, `YOUNG`,
+         `ECONOMY ACTIVE`, `AGED`,
+         `TOTAL`, `DEPENDENCY`)
+```
+```{r}
+popdata2023 <- popdata2023 %>%
+  mutate_at(.vars = vars(PA, SZ),
+            .funs = list(toupper)) %>%
+  filter(`ECONOMY ACTIVE` > 0)
+```
+
+```{r}
+mpsz_pop2023 <- left_join(mpsz19_shp, popdata2023,
+                          by = c("SUBZONE_N" = "SZ"))
+```
+
+```{r}
+write_rds(mpsz_pop2023, "data/mpszpop2023.rds")
+```
+
+```{r}
+tmap_mode("plot")
+qtm(mpsz_pop2023, 
+    fill = "DEPENDENCY")
+```
