@@ -2,10 +2,37 @@
 title: "ISSS626"
 ---
 
-This is a Quarto website.
+---
+title: "ISSS626 - Geospatial Analytics and Applications"
+format:
+  html:
+    theme: darkly
+    css: dark-tech.css
+    toc: true
+---
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+# Welcome to My ISSS626 Webpage
 
-```{r}
-1 + 1
-```
+![](https://files.oaiusercontent.com/file-CZviYjh7oiRvGOXnU2BGOX6V?se=2024-08-28T06%3A57%3A29Z&sp=r&sv=2024-08-04&sr=b&rscc=max-age%3D604800%2C%20immutable%2C%20private&rscd=attachment%3B%20filename%3D09624106-5526-4f72-880b-c9d84f54395c.webp&sig=NfbR6qmwV7fmCIFR7E3lSxRcXced4D63vEf6QP8U2cs%3D)
+
+## About Me
+
+Hello! I’m Lucas Luo, an enthusiast in geospatial analytics with a deep interest in leveraging cutting-edge technology to solve complex spatial problems. My background in data analysis has fueled my passion for exploring how data and technology intersect to create powerful insights.
+
+In this course, I aim to deepen my understanding of geospatial tools and apply these skills to real-world scenarios. I believe that geospatial analytics is a key to unlocking new possibilities in various fields, from urban planning to environmental conservation.
+
+## Course Expectations
+
+As I embark on this journey, I expect to:
+- **Expand** my technical skills in geospatial data analysis.
+- **Engage** in hands-on exercises that challenge my understanding.
+- **Collaborate** with like-minded peers who are passionate about technology and data.
+- **Innovate** by applying course concepts to new and exciting projects.
+
+I look forward to exploring the dynamic field of geospatial analytics and discovering how we can use these tools to drive meaningful change.
+
+---
+
+*Stay curious, keep exploring, and let’s dive into the world of geospatial analytics together!*
+
+
