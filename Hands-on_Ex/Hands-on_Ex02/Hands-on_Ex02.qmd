@@ -1,0 +1,135 @@
+---
+title: "Hands-on_Ex02"
+author: "Luo Yuming"
+date: "Aug 31 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  message: false
+  freeze: true
+---
+
+------------------------------------------------------------------------
+
+```{r}
+pacman::p_load(sf, raster, spatstat, tmap, tidyverse，sp)
+```
+
+```{r}
+childcare_sf <- st_read("data/child-care-services-geojson.geojson") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+sg_sf <- st_read(dsn = "data", layer="CostalOutline")
+```
+
+```{r}
+mpsz_sf <- st_read(dsn = "data", 
+                layer = "MP14_SUBZONE_WEB_PL")
+```
+
+# Print CRS of each dataset
+
+```{r}
+st_crs(childcare_sf)
+st_crs(sg_sf)
+st_crs(mpsz_sf)
+```
+
+# Assign EPSG:3414 to sg_sf and mpsz_sf if they do not have any or incorrect CRS
+
+```{r}
+st_crs(sg_sf) <- 3414
+st_crs(mpsz_sf) <- 3414
+childcare_sf <- st_transform(childcare_sf, 3414)
+```
+
+# Transform datasets to the Singapore national projected coordinate system
+
+```{r}
+sg_sf <- st_transform(sg_sf, 3414)
+mpsz_sf <- st_transform(mpsz_sf, 3414)
+```
+
+# Print CRS of each dataset
+
+```{r}
+st_crs(childcare_sf)
+st_crs(sg_sf)
+st_crs(mpsz_sf)
+```
+
+```{r}
+tmap_mode('view')
+tm_shape(childcare_sf)+
+  tm_dots()
+tmap_mode('plot')
+```
+
+```{r}
+childcare <- as_Spatial(childcare_sf)
+mpsz <- as_Spatial(mpsz_sf)
+sg <- as_Spatial(sg_sf)
+```
+
+```{r}
+# Function to display selected Spatial* object properties
+display_spatial_info <- function(spatial_obj) {
+  cat("Class:      ", class(spatial_obj)[1], "\n")
+  cat("Features:   ", nrow(spatial_obj), "\n")
+  cat("Extent:     ", paste(bbox(spatial_obj), collapse=" "), "\n")
+  cat("CRS:        ", proj4string(spatial_obj), "\n")
+  cat("Variables:  ", length(spatial_obj@data), "\n")
+  cat("Names:      ", paste(names(spatial_obj@data), collapse=", "), "\n")
+  
+  min_values <- apply(spatial_obj@data, 2, min, na.rm = TRUE)
+  max_values <- apply(spatial_obj@data, 2, max, na.rm = TRUE)
+  
+  cat("Min Values: ", paste(min_values, collapse=", "), "\n")
+  cat("Max Values: ", paste(max_values, collapse=", "), "\n")
+}
+
+display_spatial_info(childcare)
+display_spatial_info(mpsz)
+display_spatial_info(sg)
+```
+
+```{r}
+childcare_sp <- as(childcare, "SpatialPoints")
+sg_sp <- as(sg, "SpatialPolygons")
+childcare_sp
+sg_sp
+```
+```{r}
+#convert the spatial data into spatstat’s ppp object format
+childcare_ppp <- as.ppp(childcare_sf)
+childcare_ppp
+```
+```{r}
+plot(childcare_ppp)
+```
+```{r}
+summary(childcare_ppp)
+```
+```{r}
+#Handling duplicated points
+any(duplicated(childcare_ppp))
+#multiplicity(childcare_ppp)
+sum(multiplicity(childcare_ppp) > 1)
+tmap_mode('view')
+tm_shape(childcare) +
+  tm_dots(alpha=0.4, 
+          size=0.05)
+tmap_mode('plot')
+```
+```{r}
+#Challenge
+#jittering approach
+childcare_ppp_jit <- rjitter(childcare_ppp, 
+                             retry=TRUE, 
+                             nsim=1, 
+                             drop=TRUE)
+any(duplicated(childcare_ppp_jit))
+```
