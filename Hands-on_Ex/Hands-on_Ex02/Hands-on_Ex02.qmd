@@ -218,6 +218,8 @@ plot(kde_childcareSG_adaptive, main = "Adaptive bandwidth")
 ```
 
 ```{r}
+gridded_kde_childcareSG_bw <- maptools::as.SpatialGridDataFrame.im(kde_childcareSG.bw)
+spplot(gridded_kde_childcareSG_bw)
 kde_childcareSG_bw_raster <- raster(kde_childcareSG.bw)
 kde_childcareSG_bw_raster
 projection(kde_childcareSG_bw_raster) <- CRS("+init=EPSG:3414")
