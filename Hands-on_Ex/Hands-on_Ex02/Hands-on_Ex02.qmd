@@ -316,17 +316,21 @@ clarkevans.test(childcareSG_ppp,
                 clipregion="sg_owin",
                 alternative=c("clustered"),
                 nsim=99)
+print("The very low R value significantly less than 1, along with a very small p-value, strongly rejects the null hypothesis of random distribution. This suggests that childcare services in Singapore are significantly clustered.")
 
 clarkevans.test(childcare_ck_ppp,
                 correction="none",
                 clipregion=NULL,
                 alternative=c("two.sided"),
                 nsim=999)
+print("The R value is close to 1, and the high p-value does not reject the null hypothesis of random distribution at the 95% confidence level. This indicates that the distribution of childcare services in Choa Chu Kang is approximately random, showing neither significant clustering nor dispersion.")
 
 clarkevans.test(childcare_tm_ppp,
                 correction="none",
                 clipregion=NULL,
                 alternative=c("two.sided"),
                 nsim=999)
+
+print("The R value is below 1, and the very low p-value strongly rejects the null hypothesis. This suggests that the childcare services in Tampines are clustered, but not as strongly as in the overall Singapore area.")
 ```
 
