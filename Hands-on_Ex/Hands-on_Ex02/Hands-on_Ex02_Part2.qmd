@@ -1,0 +1,205 @@
+---
+title: "Hands-on_Ex02"
+author: "Luo Yuming"
+date: "Sep 1 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  message: false
+  freeze: true
+---
+
+------------------------------------------------------------------------
+```{r}
+pacman::p_load(sf, raster, spatstat, tmap, tidyverse)
+```
+
+```{r}
+#Importing the spatial data
+childcare_sf <- st_read("data/child-care-services-geojson.geojson") %>%
+  st_transform(crs = 3414)
+sg_sf <- st_read(dsn = "data", layer="CostalOutline")
+sg_sf <- st_read(dsn = "data", layer="CostalOutline")
+mpsz_sf <- st_read(dsn = "data", 
+                layer = "MP14_SUBZONE_WEB_PL")
+```
+
+```{r}
+# Assign EPSG:3414 to sg_sf and mpsz_sf if they do not have any or incorrect CRS
+st_crs(sg_sf) <- 3414
+st_crs(mpsz_sf) <- 3414
+childcare_sf <- st_transform(childcare_sf, 3414)
+
+# Transform datasets to the Singapore national projected coordinate system
+sg_sf <- st_transform(sg_sf, 3414)
+mpsz_sf <- st_transform(mpsz_sf, 3414)
+
+# Print CRS of each dataset
+st_crs(childcare_sf)
+st_crs(sg_sf)
+st_crs(mpsz_sf)
+```
+
+```{r}
+tmap_mode('view')
+tm_shape(childcare_sf)+
+  tm_dots()
+tmap_mode('plot')
+```
+
+```{r}
+childcare_ppp <- as.ppp(childcare_sf)
+childcare_ppp
+plot(childcare_ppp)
+summary(childcare_ppp)
+```
+
+```{r}
+#Handling duplicated points
+any(duplicated(childcare_ppp))
+multiplicity(childcare_ppp)
+sum(multiplicity(childcare_ppp) > 1)
+tmap_mode('view')
+tm_shape(childcare_sf) +
+  tm_dots(alpha=0.4, 
+          size=0.05)
+
+#jittering approach
+childcare_ppp_jit <- rjitter(childcare_ppp, 
+                             retry=TRUE, 
+                             nsim=1, 
+                             drop=TRUE)
+
+any(duplicated(childcare_ppp_jit))
+
+sg_owin <- as.owin(sg_sf)
+plot(sg_owin)
+summary(sg_owin)
+
+#Combining point events object and owin object
+childcareSG_ppp = childcare_ppp[sg_owin]
+summary(childcareSG_ppp)
+plot(childcareSG_ppp)
+```
+
+```{r}
+#Extracting study area
+pg <- mpsz_sf %>%
+  filter(PLN_AREA_N == "PUNGGOL")
+tm <- mpsz_sf %>%
+  filter(PLN_AREA_N == "TAMPINES")
+ck <- mpsz_sf %>%
+  filter(PLN_AREA_N == "CHOA CHU KANG")
+jw <- mpsz_sf %>%
+  filter(PLN_AREA_N == "JURONG WEST")
+
+par(mfrow=c(2,2))
+plot(pg, main = "Ponggol")
+
+plot(tm, main = "Tampines")
+
+plot(ck, main = "Choa Chu Kang")
+
+plot(jw, main = "Jurong West")
+```
+```{r}
+pg_owin = as.owin(pg)
+tm_owin = as.owin(tm)
+ck_owin = as.owin(ck)
+jw_owin = as.owin(jw)
+
+childcare_pg_ppp = childcare_ppp_jit[pg_owin]
+childcare_tm_ppp = childcare_ppp_jit[tm_owin]
+childcare_ck_ppp = childcare_ppp_jit[ck_owin]
+childcare_jw_ppp = childcare_ppp_jit[jw_owin]
+
+childcare_pg_ppp.km = rescale(childcare_pg_ppp, 1000, "km")
+childcare_tm_ppp.km = rescale(childcare_tm_ppp, 1000, "km")
+childcare_ck_ppp.km = rescale(childcare_ck_ppp, 1000, "km")
+childcare_jw_ppp.km = rescale(childcare_jw_ppp, 1000, "km")
+
+par(mfrow=c(2,2))
+plot(childcare_pg_ppp.km, main="Punggol", cex=0.5)
+plot(childcare_tm_ppp.km, main="Tampines", cex=0.5)
+plot(childcare_ck_ppp.km, main="Choa Chu Kang", cex=0.5)
+plot(childcare_jw_ppp.km, main="Jurong West", cex=0.5)
+```
+```{r}
+#G-Function
+
+#Choa Chu Kang planning area
+#Computing G-function estimation
+G_CK = Gest(childcare_ck_ppp, correction = "border")
+plot(G_CK, xlim=c(0,500))
+
+#Performing Complete Spatial Randomness Test
+G_CK.csr <- envelope(childcare_ck_ppp, Gest, nsim = 999)
+
+plot(G_CK.csr)
+
+
+#Tampines planning area
+#Computing G-function estimation
+G_tm = Gest(childcare_tm_ppp, correction = "best")
+plot(G_tm)
+#Performing Complete Spatial Randomness Test
+G_tm.csr <- envelope(childcare_tm_ppp, Gest, correction = "all", nsim = 999)
+
+plot(G_tm.csr)
+```
+
+```{r}
+#F-Function
+
+#Choa Chu Kang planning area
+F_CK = Fest(childcare_ck_ppp)
+plot(F_CK)
+F_CK.csr <- envelope(childcare_ck_ppp, Fest, nsim = 999)
+plot(F_CK.csr)
+
+#Tampines planning area
+F_tm = Fest(childcare_tm_ppp, correction = "best")
+plot(F_tm)
+F_tm.csr <- envelope(childcare_tm_ppp, Fest, correction = "all", nsim = 999)
+plot(F_tm.csr)
+```
+
+```{r}
+#K-Function
+
+#Choa Chu Kang planning area
+K_ck = Kest(childcare_ck_ppp, correction = "Ripley")
+plot(K_ck, . -r ~ r, ylab= "K(d)-r", xlab = "d(m)")
+K_ck.csr <- envelope(childcare_ck_ppp, Kest, nsim = 99, rank = 1, glocal=TRUE)
+plot(K_ck.csr, . - r ~ r, xlab="d", ylab="K(d)-r")
+
+#Tampines planning area
+K_tm = Kest(childcare_tm_ppp, correction = "Ripley")
+plot(K_tm, . -r ~ r, 
+     ylab= "K(d)-r", xlab = "d(m)", 
+     xlim=c(0,1000))
+K_tm.csr <- envelope(childcare_tm_ppp, Kest, nsim = 99, rank = 1, glocal=TRUE)
+plot(K_tm.csr, . - r ~ r, 
+     xlab="d", ylab="K(d)-r", xlim=c(0,500))
+```
+
+```{r}
+# L-Function
+
+#Choa Chu Kang planning area
+L_ck = Lest(childcare_ck_ppp, correction = "Ripley")
+plot(L_ck, . -r ~ r, 
+     ylab= "L(d)-r", xlab = "d(m)")
+L_ck.csr <- envelope(childcare_ck_ppp, Lest, nsim = 99, rank = 1, glocal=TRUE)
+plot(L_ck.csr, . - r ~ r, xlab="d", ylab="L(d)-r")
+
+#Tampines planning area
+L_tm = Lest(childcare_tm_ppp, correction = "Ripley")
+plot(L_tm, . -r ~ r, 
+     ylab= "L(d)-r", xlab = "d(m)", 
+     xlim=c(0,1000))
+L_tm.csr <- envelope(childcare_tm_ppp, Lest, nsim = 99, rank = 1, glocal=TRUE)
+plot(L_tm.csr, . - r ~ r, 
+     xlab="d", ylab="L(d)-r", xlim=c(0,500))
+```
