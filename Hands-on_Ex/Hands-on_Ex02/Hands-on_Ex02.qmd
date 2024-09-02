@@ -13,7 +13,7 @@ execute:
 ------------------------------------------------------------------------
 
 ```{r}
-pacman::p_load(sf, raster, spatstat, tmap, tidyverse，sp)
+pacman::p_load(sf, raster, spatstat, tmap, tidyverse, sp)
 ```
 
 ```{r}
