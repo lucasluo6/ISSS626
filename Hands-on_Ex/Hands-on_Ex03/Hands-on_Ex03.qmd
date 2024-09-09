@@ -1,0 +1,145 @@
+---
+title: "Hands-on_Ex03"
+author: "Luo Yuming"
+date: "Sep 5 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  message: false
+  freeze: true
+---
+
+------------------------------------------------------------------------
+
+# 7 Network Constrained Spatial Point Patterns Analysis
+
+## 7.1 Overview
+
+Network constrained Spatial Point Patterns Analysis (NetSPAA) is a collection of spatial point patterns analysis methods special developed for analysing spatial point event occurs on or alongside network. The spatial point event can be locations of traffic accident or childcare centre for example. The network, on the other hand can be a road network or river network.
+
+In this hands-on exercise, you are going to gain hands-on experience on using appropriate functions of spNetwork package:
+
+to derive network kernel density estimation (NKDE), and to perform network G-function and k-function analysis
+
+## 7.2 The Data
+
+In this study, we will analyse the spatial distribution of childcare centre in Punggol planning area. For the purpose of this study, two geospatial data sets will be used. They are:
+
+- Punggol_St, a line features geospatial data which store the road network within Punggol Planning Area. 
+- Punggol_CC, a point feature geospatial data which store the location of childcare centres within Punggol Planning Area. Both data sets are in ESRI shapefile format.
+
+## 7.3 Installing and launching the R packages
+
+In this hands-on exercise, four R packages will be used, they are:
+
+spNetwork, which provides functions to perform Spatial Point Patterns Analysis such as kernel density estimation (KDE) and K-function on network. It also can be used to build spatial matrices (‘listw’ objects like in ‘spdep’ package) to conduct any kind of traditional spatial analysis with spatial weights based on reticular distances. sf package provides functions to manage, processing, and manipulate Simple Features, a formal geospatial data standard that specifies a storage and access model of spatial geometries such as points, lines, and polygons. tmap which provides functions for plotting cartographic quality static point patterns maps or interactive maps by using leaflet API. Use the code chunk below to install and launch the four R packages.
+
+```{r}
+pacman::p_load(sf, spNetwork, tmap, tidyverse)
+```
+## 7.4 Data Import and Preparation
+```{r}
+network <- st_read(dsn="data/geospatial", 
+                   layer="Punggol_St")
+childcare <- st_read(dsn="data/geospatial",
+                     layer="Punggol_CC")
+network
+childcare 
+```
+
+## 7.5 Visualising the Geospatial Data
+### Using plot() of Base R
+```{r}
+plot(st_geometry(network))
+plot(childcare,add=T,col='red',pch = 19)
+```
+### Using tmap package
+```{r}
+tmap_mode('view')
+tm_shape(childcare) + 
+  tm_dots() + 
+  tm_shape(network) +
+  tm_lines()
+tmap_mode('plot')
+```
+## 7.6 Network KDE (NKDE) Analysis
+### 7.6.1 Preparing the lixels objects
+```{r}
+lixels <- lixelize_lines(network, 
+                         700, 
+                         mindist = 375)
+```
+### 7.6.2 Generating line centre points
+```{r}
+samples <- lines_center(lixels) 
+```
+### 7.6.3 Performing NKDE
+```{r}
+# Convert XYZ to XY by dropping Z coordinate
+childcare_2d <- st_zm(childcare)
+
+# Performing NKDE
+densities <- nkde(network, 
+                  events = childcare_2d ,  # Ensure childcare is an 'sf' object
+                  w = rep(1, nrow(childcare_2d)),  # Weights corresponding to each point in childcare
+                  samples = samples,  # Centers of lixels as samples
+                  kernel_name = "quartic",
+                  bw = 375, 
+                  div = "bw",
+                  method = "simple", 
+                  digits = 1, 
+                  tol = 1,
+                  grid_shape = c(1,1), 
+                  max_depth = 8,
+                  agg = 5, 
+                  sparse = TRUE,
+                  verbose = FALSE)  # verbose TRUE for debugging
+
+```
+#### 7.6.3.1 Visualising NKDE
+```{r}
+samples$density <- densities
+lixels$density <- densities
+
+# rescaling to help the mapping
+samples$density <- samples$density*1000
+lixels$density <- lixels$density*1000
+
+tmap_mode('view')
+tm_shape(lixels)+
+  tm_lines(col="density")+
+tm_shape(childcare)+
+  tm_dots()
+tmap_mode('plot')
+```
+## 7.7 Network Constrained G- and K-Function Analysis
+Ho: The observed spatial point events (i.e distribution of childcare centres) are uniformly distributed over a street network in Punggol Planning Area.
+何：观察到的空间点事件（即托儿中心的分布）均匀分布在榜鹅规划区的街道网络上。
+
+The CSR test is based on the assumption of the binomial point process which implies the hypothesis that the childcare centres are randomly and independently distributed over the street network.
+CSR 测试基于二项式点过程的假设，这意味着托儿中心随机且独立地分布在街道网络上的假设。
+
+If this hypothesis is rejected, we may infer that the distribution of childcare centres are spatially interacting and dependent on each other; as a result, they may form nonrandom patterns.
+如果这个假设被拒绝，我们可以推断托儿所的分布在空间上是相互作用且相互依赖的；因此，它们可能会形成非随机模式。
+```{r}
+kfun_childcare <- kfunctions(network, 
+                             childcare,
+                             start = 0, 
+                             end = 1000, 
+                             step = 50, 
+                             width = 50, 
+                             nsim = 50, 
+                             resolution = 50,
+                             verbose = FALSE, 
+                             conf_int = 0.05)
+kfun_childcare$plotk
+```
+The blue line is the empirical network K-function of the childcare centres in Punggol planning area. The gray envelop represents the results of the 50 simulations in the interval 2.5% - 97.5%. Because the blue line between the distance of 250m-400m are below the gray area, we can infer that the childcare centres in Punggol planning area resemble regular pattern at the distance of 250m-400m.
+
+
+
+
+
+
+
