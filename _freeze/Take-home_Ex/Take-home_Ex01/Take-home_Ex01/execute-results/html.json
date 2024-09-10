@@ -1,0 +1,14 @@
+{
+  "hash": "f4b08b27e593006b07a4882d83262306",
+  "result": {
+    "markdown": "---\ntitle: \"Take-home Exercise 1\"\nauthor: \"Luo Yuming\"\ndate: \"septerber 9, 2024\"\ndate-modified: \"Last-modified\"\nexecute:\n  eval: true\n  echo: true\n  freeze: true\n  warning: false\n---\n\n::: {.cell}\n\n```{.r .cell-code}\npacman::p_load(sf, spNetwork, tmap, tidyverse)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nacc <- read_csv(\"data/rawdata/thai_road_accident_2019_2022.csv\") %>%\n \n   # Remove rows with missing longitude or latitude\n  filter(!is.na(longitude) & !is.na(latitude)) %>%\n  \n  # Create new columns for month and day of the week\n\n  mutate(Month_num= month(incident_datetime)) %>%\n  mutate(Month_fac= month(incident_datetime,label=TRUE,abbr=TRUE))%>%\n  mutate(dayofweek=day(incident_datetime))\n```\n:::\n\n\n%>%\n  st_as_sf(coords = c(\"longitude\", \"latitude\"),\n                       crs=4326)%>%\n  st_transform(crs = 32647)\n\nwrite_rds(acc,\"data/rds/acc/rds\")\n\nacc <- read_rds(\"data/rds/acc.rds\")\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

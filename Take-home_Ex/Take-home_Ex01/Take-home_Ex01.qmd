@@ -1,0 +1,38 @@
+---
+title: "Take-home Exercise 1"
+author: "Luo Yuming"
+date: "septerber 9, 2024"
+date-modified: "Last-modified"
+execute:
+  eval: true
+  echo: true
+  freeze: true
+  warning: false
+---
+
+```{r}
+pacman::p_load(sf, spNetwork, tmap, tidyverse)
+```
+
+```{r}
+#|  eval: true
+acc <- read_csv("data/rawdata/thai_road_accident_2019_2022.csv") %>%
+ 
+   # Remove rows with missing longitude or latitude
+  filter(!is.na(longitude) & !is.na(latitude)) %>%
+  
+  # Create new columns for month and day of the week
+
+  mutate(Month_num= month(incident_datetime)) %>%
+  mutate(Month_fac= month(incident_datetime,label=TRUE,abbr=TRUE))%>%
+  mutate(dayofweek=day(incident_datetime))
+```
+
+%>%
+  st_as_sf(coords = c("longitude", "latitude"),
+                       crs=4326)%>%
+  st_transform(crs = 32647)
+
+write_rds(acc,"data/rds/acc/rds")
+
+acc <- read_rds("data/rds/acc.rds")
