@@ -1,0 +1,118 @@
+```{r}
+pacman::p_load(sf, sfdep, tmap, tidyverse, knitr, DT, ggplot2, plotly, h3jsr, skimr)
+```
+
+```{r}
+#| eval: false
+acc <- read_csv("data/rawdata/thai_road_accident_2019_2022.csv") %>%
+  mutate(Month_num = month(incident_datetime)) %>%
+  mutate(Month_fac = month(incident_datetime,
+                       label = TRUE,
+                       abbr = TRUE)) %>%
+  mutate(dayofweek = weekdays(incident_datetime))%>%
+  filter(!is.na(longitude) & !is.na(latitude)) %>%  # Remove rows with missing coordinates
+  st_as_sf(coords = c("longitude", "latitude"),
+                       crs=4326) %>%
+  st_transform(crs = 32647)
+```
+
+```{r}
+#| eval: false
+write_rds(acc, "data/rds/acc.rds")
+```
+
+```{r}
+#| eval: false
+acc <- read_rds("data/rds/acc.rds")
+```
+
+```{r}
+#| eval: false
+# 筛选出bmr Metropolitan Region (BMR)的所有省份
+bmr_provinces <- c("bangkok", "Nakhon Pathom", "Pathum Thani", "Nonthaburi", "Samut Prakan", "Samut Sakhon")
+
+bmr_acc_data <- acc %>%
+  filter(province_en %in% bmr_provinces)
+
+# 查看数据
+head(bmr_acc_data)
+
+```
+
+```{r}
+#| eval: false
+write_rds(bmr_acc_data,"data/rds/bmr_acc_data.rds")
+```
+
+```{r}
+
+bmr_acc_data <- read_rds("data/rds/bmr_acc_data.rds")
+```
+
+```{r}
+#| eval: false
+roads <- st_read(dsn = "data/rawdata",
+                        layer = "hotosm_tha_roads_lines_shp")
+```
+
+
+
+```{r}
+#| eval: false
+admin_boundaries <- st_read(dsn = "data/rawdata",
+                        layer = "tha_admbnda_adm1_rtsd_20220121")
+```
+
+```{r}
+#| eval: false
+# 定义BMR的省份
+bmr_provinces <- c("Bangkok", "Nakhon Pathom", "Pathum Thani", "Nonthaburi", "Samut Prakan", "Samut Sakhon")
+
+# 筛选出Bangkok Metropolitan Region (BMR)的边界
+bmr_boundary <- admin_boundaries %>%
+  filter(ADM1_EN %in% bmr_provinces)
+
+# 查看结果
+head(bmr_boundary)
+
+```
+
+```{r}
+#| eval: false
+write_rds(bmr_boundary, "data/rds/bmr_boundary.rds")
+```
+
+```{r}
+bmr_boundary <- read_rds("data/rds/bmr_boundary.rds")
+```
+
+```{r}
+#| eval: false
+# 将 CRS 转换为 WGS 84 (EPSG:4326)
+st_crs(roads) <- 4326
+
+```
+
+```{r}
+#| eval: false
+bmr_roads <- st_intersection(roads, bmr_boundary)
+
+```
+```{r}
+head(bangkok_boundary)
+```
+
+
+```{r}
+#| eval: false
+saveRDS(bmr_roads,"data/rds/bmr_roads.rds")
+```
+
+```{r}
+bmr_roads <- read_rds("data/rds/bmr_roads.rds")
+```
+
+
+```{r}
+head(bmr_roads)
+```
