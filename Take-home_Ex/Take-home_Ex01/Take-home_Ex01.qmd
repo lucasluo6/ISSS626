@@ -167,7 +167,7 @@ tm_shape(bmr) +
   tm_layout(title = "Road Traffic Accidents in BMR")
 
 # 切换到交互模式
-tmap_mode("view")
+tmap_mode("plot")
 ```
 Explanation of the Code:
 tm_shape(bmr) + tm_polygons():
@@ -180,9 +180,6 @@ tm_shape(bmr_acc) + tm_dots(col = "red", size = 0.1):
 
 This plots the accident locations on the map as red dots. The small dot size ensures that even when multiple accidents occur close to each other, the map remains readable.
 tm_layout(title = "Road Traffic Accidents in BMR"):
-
-This adds a title to the map to describe the content being visualized.
-tmap_mode("view"):
 
 This switches the map into interactive mode, allowing users to zoom, pan, and explore the geographic data more dynamically.
 Result Analysis:
@@ -501,8 +498,6 @@ lixels_SamutPrakan$density <- lixels_SamutPrakan$density * 10000
 ### 8.map：
 
 ```{r}
-# 设置 tmap 的视图模式为 'view'
-tmap_mode('view')
 
 # 绘制 Bangkok
 tm_shape(lixels_bangkok) +
@@ -630,7 +625,7 @@ hourly_acc <- bmr_acc %>%
 rush_hour_acc <- bmr_acc %>% filter(hour >= 7 & hour <= 9)  # Example: Rush hour 7-9 AM
 
 # Use tmap to create spatial visualizations for rush hour accidents
-tmap_mode('view')
+tmap_mode('plot')
 tm_shape(bmr_roads) +
   tm_lines(col = "gray", lwd = 1) +
   tm_shape(rush_hour_acc) +
@@ -754,7 +749,6 @@ weekday_density_sf <- st_as_sf(data.frame(geometry = st_geometry(bmr_roads_simpl
 weekend_density_sf <- st_as_sf(data.frame(geometry = st_geometry(bmr_roads_simple), density = weekend_density))
 
 # Visualize KDE for daytime accidents
-tmap_mode("view")
 tm_shape(bmr_roads_simple) +
   tm_lines(col = "gray") +
   tm_shape(daytime_density_sf) +
@@ -772,7 +766,7 @@ tm_shape(bmr_roads_simple) +
 tm_shape(bmr_roads_simple) +
   tm_lines(col = "gray") +
   tm_shape(weekday_density_sf) +
-  tm_lines(col = "density", palette = "Greens", lwd = 2, title.col = "Weekday Density") +
+  tm_lines(col = "density", palette = "Greens", lwd = 2, title.col = "Weekda Density") +
   tm_layout(title = "Accident Density during Weekdays")
 
 # Visualize KDE for weekend accidents
