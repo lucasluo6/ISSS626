@@ -44,7 +44,7 @@ The combination of these datasets enables us to perform detailed geospatial anal
 
 To begin, several R packages are loaded for different purposes such as spatial data processing, network analysis, and visualization:
 
-```{r}
+```{r, cache=TRUE}
 pacman::p_load(sf, sfdep, tmap, tidyverse, spNetwork, spacetime, spatstat, ggplot2)
 ```
 
@@ -62,8 +62,7 @@ spatstat: A package for spatial point pattern analysis, providing tools for calc
 ##Importing Data
 ### 1. Load and Clean Accident Data
 
-```{r}
-# #|  eval: false
+```{r, cache=TRUE}
 car_acc <- read_csv("data/rawdata/thai_road_accident_2019_2022.csv") %>%
 
    # Remove rows with missing longitude or latitude
@@ -88,67 +87,67 @@ st_as_sf(coords = c("longitude", "latitude"), crs = 4326): Converts the data int
 st_transform(crs = 32647): Transforms the spatial object to UTM zone 47N (EPSG: 32647), which is often used for geographic data in Thailand.
 
 ### 2. Filter Accident Data for BMR (Bangkok Metropolitan Region)
-```{r}
+```{r, cache=TRUE}
  bmr_acc <- car_acc %>%
    filter(province_en %in% c("Bangkok", "Nonthaburi", "Nakhon Pathom", "Pathum Thani", "Samut Prakan", "Samut Sakhon"))
 ```
 filter(province_en %in% c(...)): Filters the accident data to include only accidents occurring in the Bangkok Metropolitan Region, i.e., the six listed provinces.
 
 ### 3. Save the Filtered Data for BMR
-```{r}
-#| eval: false
+```{r, cache=TRUE}
+##| eval: false
 write_rds(bmr_acc,"data/rds/bmr_acc.rds")
 ```
 ### 4. Load Administrative Boundaries
-```{r}
-#| eval: false
+```{r, cache=TRUE}
+##| eval: false
 boundaries <- st_read(dsn = "data/rawdata",
                         layer = "tha_admbnda_adm1_rtsd_20220121")
 ```
 ### 5. Filter Boundaries for BMR
-```{r}
-#| eval: false
+```{r, cache=TRUE}
+
 bmr_boundary <- boundaries %>%
   filter(ADM1_EN %in% c("Bangkok", "Nonthaburi", "Nakhon Pathom", "Pathum Thani", "Samut Prakan", "Samut Sakhon"))
 ```
 ### 6. Save Filtered BMR Boundaries
-```{r}
-#| eval: false
+```{r, cache=TRUE}
+
 write_rds(bmr_boundary, "data/rds/bmr.rds")
 ```
 ### 7. Load Road Network Data
-```{r}
-#| eval: false
+```{r, cache=TRUE}
+
 roads <- st_read(dsn = "data/rawdata",
                         layer = "hotosm_tha_roads_lines_shp")
 ```
 ### 8. Assign CRS to Road Network
-```{r}
-#| eval: false
+```{r, cache=TRUE}
+##| eval: false
 st_crs(roads) <- 4326
 ```
 ### 9. Clip Roads to BMR Boundaries
-```{r}
-#| eval: false
+```{r, cache=TRUE}
+##| eval: false
 bmr_roads <- st_intersection(roads, bmr_boundary)
 ```
 ### 10. Save the Filtered BMR Roads Data
-```{r}
-#| eval: false
+```{r, cache=TRUE}
+##| eval: false
 saveRDS(bmr_roads,"data/rds/bmr_roads.rds")
 ```
 ### 11. Load the Date from RDS
-```{r}
+```{r, cache=TRUE}
 bmr <- read_rds("data/rds/bmr.rds")
 bmr
 ```
 
-```{r}
+```{r, cache=TRUE}
 bmr_roads <- read_rds("data/rds/bmr_roads.rds")
 bmr_roads
 ```
 
-```{r}
+```{r, cache=TRUE}
 bmr_acc <- read_rds("data/rds/bmr_acc.rds")
 bmr_acc
 ```
@@ -157,7 +156,7 @@ bmr_acc
 The EDA focuses on visualizing the basic geographic features and accident points within the Bangkok Metropolitan Region (BMR). Here’s a breakdown of each component of the code and the result:
 
 ### EDA 1: Visualization of Traffic Accidents in the BMR
-```{r}
+```{r, cache=TRUE}
 tm_shape(bmr) + 
   tm_polygons() +  # 绘制BMR的区域边界
   tm_shape(bmr_roads) + 
@@ -187,7 +186,7 @@ Accident Distribution: The red dots represent individual traffic accidents in th
 High-risk Areas: Some road segments appear to have a dense cluster of accidents, which could indicate accident-prone areas. These could be major intersections, busy highways, or areas with challenging road conditions.
 
 ### EDA 2: Monthly Distribution of Traffic Accidents in BMR
-```{r}
+```{r, cache=TRUE}
 # 按月分组，计算每个月的事故数量
 monthly_accidents <- bmr_acc %>%
   group_by(Month_fac) %>%
@@ -209,8 +208,7 @@ This visualization illustrates the monthly distribution of traffic accidents in 
 The map uses a facet approach, allowing for a detailed month-by-month comparison, making it easier to visually assess changes in accident distribution across different time periods.
 
 ### EDA 3: Heatmap of Traffic Accident Density in BMR Provinces
-```{r}
-
+```{r, cache=TRUE}
 # 1. 处理省份名称的不一致问题，确保 bmr 和 bmr_acc 的省份名称一致
 bmr$ADM1_EN <- trimws(tolower(bmr$ADM1_EN))
 bmr_acc$province_en <- trimws(tolower(bmr_acc$province_en))
@@ -284,7 +282,7 @@ Further analysis can be done by looking into different time periods (day vs. nig
 ##Network KDE (NKDE) Analysis
 
 ### 1.data ：
-```{r}
+```{r, cache=TRUE}
 # 假设 bmr_roads 和 bmr 已经被读取并转换为 sf 对象
 bmr_roads <- bmr_roads %>%
   filter(highway %in% c("motorway", "trunk", "primary", "secondary"))
@@ -320,8 +318,7 @@ print(bangkok_roads_intersection)
 
 ### city-data：
 
-```{r}
-
+```{r, cache=TRUE}
 # Step 1: 从 bmr_city 中分别筛选出 Bangkok 和 Samut Prakan 的数据
 bangkok_boundary <- bmr_city %>%
   filter(ADM1_EN == "Bangkok")
@@ -333,7 +330,7 @@ SamutPrakan_boundary <- bmr_city %>%
 
 ### 3.acc-data：
 
-```{r}
+```{r, cache=TRUE}
 bangkok_acc_data <- bmr_acc %>%
   filter(province_en == "bangkok")
 
@@ -344,6 +341,7 @@ SamutPrakan_acc_data <- bmr_acc %>%
 ### 4.linestring：
 
 ```{r}
+#| cache: true
 # 确定目标坐标系为 UTM Zone 47N (EPSG: 32647)
 target_crs <- 32647  # UTM Zone 47N
 
@@ -391,7 +389,7 @@ st_geometry_type(roads_in_SamutPrakan)
 
 ### 5.acc_in_xx(city)：
 
-```{r}
+```{r, cache=TRUE}
 # 将所有数据转换为UTM坐标系 (EPSG: 32647)
 target_crs <- 32647  # UTM Zone 47N
 
@@ -407,8 +405,7 @@ roads_in_bangkok_lines <- st_cast(roads_in_bangkok, "LINESTRING")
 roads_in_SamutPrakan_lines <- st_cast(roads_in_SamutPrakan, "LINESTRING")
 ```
 
-```{r}
-
+```{r, cache=TRUE}
 # 使用 lixelize_lines 函数生成 lixels，设置合适的单元长度
 # 假设高速公路路段较长，选择 5000 米的 lixel 单元
 lixels_bangkok <- lixelize_lines(roads_in_bangkok_lines,
@@ -420,9 +417,7 @@ samples_bangkok <- lines_center(lixels_bangkok)
 
 ```
 
-```{r}
-
-# 将 Samut_Sakhon_roads_intersection 转换为 LINESTRING
+```{r, cache=TRUE}
 roads_in_SamutPrakan_lines <- st_cast(SamutPrakan_roads_intersection, "LINESTRING")
 
 # 使用 lixelize_lines 函数生成 lixels，设置合适的单元长度
@@ -438,7 +433,7 @@ samples_SamutPrakan <- lines_center(lixels_SamutPrakan)
 
 ### 6.NEKD:
 
-```{r}
+```{r, cache=TRUE}
 # 修改后的 nkde 函数，使用 bangkok 的数据
 # Ensure acc_in_bangkok is an sf object with valid geometries
 acc_in_bangkok <- st_as_sf(bangkok_acc_data)
@@ -476,7 +471,8 @@ nkde_result_SamutPrakan <- nkde(
 
 ### 7.diffent：
 
-```{r}
+```{r, cache=TRUE}
+#| cache: true
 print(nkde_result_bangkok)
 print(nkde_result_SamutPrakan)
 samples_bangkok$density <- nkde_result_bangkok
@@ -497,8 +493,8 @@ lixels_SamutPrakan$density <- lixels_SamutPrakan$density * 10000
 
 ### 8.map：
 
-```{r}
-
+```{r, cache=TRUE}
+#| cache: true
 # 绘制 Bangkok
 tm_shape(lixels_bangkok) +
   tm_lines(col = "density", palette = "-RdYlBu", title.col = "Density", lwd = 3, breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5)) + 
@@ -585,7 +581,7 @@ Aggregate Accident Data by Time:
 Extract temporal information from the accident data, such as hour of the day, day of the week, or month. This will help you see if accidents tend to happen during certain times of the day or specific months.
 Visualize Temporal Patterns:
 Use time series plots or heatmaps to visualize how accident frequencies change over time. You can also look for seasonality or trends (e.g., higher accident rates during specific months or on weekends).
-```{r}
+```{r, cache=TRUE}
 # Extract the hour, day, and month from the accident timestamps
 bmr_acc$hour <- lubridate::hour(bmr_acc$incident_datetime)
 bmr_acc$day <- lubridate::wday(bmr_acc$incident_datetime, label = TRUE)
@@ -615,7 +611,7 @@ split the accident data into different time intervals (e.g., hourly, daily, or m
 Overlay Spatial Data with Time:
 Overlay the accident data on the road network for different time periods to visualize whether spatial hotspots change at certain times of day, such as during rush hours.
 
-```{r}
+```{r, cache=TRUE}
 # Group accidents by time intervals (hourly, daily, etc.)
 hourly_acc <- bmr_acc %>%
   group_by(hour) %>%
@@ -639,8 +635,8 @@ Use Kernel Density Estimation (KDE) for Different Time Periods:
 
 Calculate KDE for accident density, but now do it separately for different time periods (e.g., day vs. night, weekdays vs. weekends). This allows us to see how the spatial distribution of accidents changes over time.
 Network-based KDE by Time Intervals:
-
-```{r}
+'''''''
+```{r, cache=TRUE}
 # Set target CRS as UTM Zone 47N (EPSG: 32647)
 target_crs <- 32647
 
@@ -675,7 +671,7 @@ weekend_acc_projected <- st_transform(weekend_acc, crs = target_crs)
 ```
 
 
-```{r}
+```{r, cache=TRUE}
 # Perform KDE for daytime
 daytime_density <- nkde(
   bmr_roads_simple, 
@@ -722,7 +718,7 @@ weekend_density <- nkde(
 
 ```
 
-```{r}
+```{r, cache=TRUE}
 # Check if number of rows in density results matches the road geometries
 if (length(daytime_density) != nrow(bmr_roads_simple)) {
   # Option 1: Pad the density with NA or 0 for roads without accidents
