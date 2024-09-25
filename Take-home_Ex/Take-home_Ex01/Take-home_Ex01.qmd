@@ -482,7 +482,7 @@ lixels_SamutPrakan$density <- lixels_SamutPrakan$density * 10000
 ### 8.Map：
 
 ```{r, cache=TRUE}
-#| cache: true
+tmap_mode('view')
 # Bangkok
 tm_shape(lixels_bangkok) +
   tm_lines(col = "density", palette = "-RdYlBu", title.col = "Density", lwd = 5, breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5)) + 
@@ -494,8 +494,6 @@ tm_shape(lixels_SamutPrakan) +
   tm_lines(col = "density", palette = "-RdYlBu", title.col = "Density", lwd = 5, breaks = c(0, 0.1, 0.2, 0.3, 0.4, 0.5)) + 
   tm_shape(acc_in_SamutPrakan) +
   tm_dots(size = 0.1, col = "blue", alpha = 0.5, title = "Accidents")
-
-tmap_mode('view')
 
 ```
 
