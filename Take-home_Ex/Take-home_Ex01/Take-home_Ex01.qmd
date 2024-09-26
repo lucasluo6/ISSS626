@@ -440,7 +440,7 @@ nkde_result_bangkok <- nkde(
   div = "bw",                                 
   method = "simple",                          
   grid_shape = c(200, 200),                    
-  verbose = TRUE                               
+  verbose = FALSE                               
 )
 
 nkde_result_SamutPrakan <- nkde(
@@ -453,7 +453,7 @@ nkde_result_SamutPrakan <- nkde(
   div = "bw",                                 
   method = "simple",                          
   grid_shape = c(200, 200),                   
-  verbose = TRUE                              
+  verbose = FALSE                               
 )
 ```
 
@@ -596,7 +596,8 @@ daytime_density <- nkde(
   samples = daytime_acc_projected, 
   kernel_name = "quartic", 
   bw = 500, 
-  method = "simple"
+  method = "simple",
+  verbose = FALSE
 )
 
 # Perform NKDE for nighttime
@@ -607,7 +608,8 @@ nighttime_density <- nkde(
   samples = nighttime_acc_projected, 
   kernel_name = "quartic", 
   bw = 500, 
-  method = "simple"
+  method = "simple",
+  verbose = FALSE
 )
 
 # Perform NKDE for weekdays
@@ -618,7 +620,8 @@ weekday_density <- nkde(
   samples = weekday_acc_projected, 
   kernel_name = "quartic", 
   bw = 500, 
-  method = "simple"
+  method = "simple",
+  verbose = FALSE
 )
 
 # Perform NKDE for weekends
@@ -629,7 +632,8 @@ weekend_density <- nkde(
   samples = weekend_acc_projected, 
   kernel_name = "quartic", 
   bw = 500, 
-  method = "simple"
+  method = "simple",
+  verbose = FALSE
 )
 
 ```
