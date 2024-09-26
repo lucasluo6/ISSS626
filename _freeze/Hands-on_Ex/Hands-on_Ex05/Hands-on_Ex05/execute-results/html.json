@@ -1,0 +1,14 @@
+{
+  "hash": "a185b09b59057d745fcd4b415586ed13",
+  "result": {
+    "markdown": "---\ntitle: \"In class exercise 05\"\nauthor: \"Luo Yuming\"\ndate: \"septerber 23, 2024\"\ndate-modified: \"Last-modified\"\nexecute:\n  eval: true\n  echo: true\n  freeze: true\n  warning: false\n---\n\n::: {.cell}\n\n```{.r .cell-code}\npacman::p_load(sf, sfdep, tmap, tidyverse)\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

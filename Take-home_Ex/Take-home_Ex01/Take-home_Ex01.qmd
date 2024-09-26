@@ -268,7 +268,7 @@ bmr_with_accidents <- bmr_with_accidents %>%
 
 
 bmr_with_accidents_sf <- st_as_sf(bmr_with_accidents, geometry = bmr$geometry)
-
+tmap_mode("view")
 tm_shape(bmr_with_accidents_sf) +
   tm_polygons("accident_count", 
               style = "pretty", 
@@ -277,7 +277,6 @@ tm_shape(bmr_with_accidents_sf) +
               popup.vars = c("Province" = "ADM1_EN", "Accidents" = "accident_count"), 
               popup.format = list(digits = 0)) + 
   tm_layout(title = "Accident Count Heatmap in BMR", legend.format = list(text.separator = "-"))
-tmap_mode("view")
 ```
 
 Explanation: Data Preparation:
@@ -369,9 +368,6 @@ roads_in_bangkok <- roads_in_bangkok %>%
 roads_in_bangkok <- st_cast(roads_in_bangkok, "LINESTRING", group_or_split = TRUE)
 
 
-st_geometry_type(roads_in_bangkok)
-
-
 SamutPrakan_acc_data <- st_transform(SamutPrakan_acc_data, crs = target_crs)
 SamutPrakan_roads_intersection <- st_transform(SamutPrakan_roads_intersection, crs = target_crs)
 SamutPrakan_boundary <- st_transform(SamutPrakan_boundary, crs = target_crs)
@@ -382,7 +378,6 @@ roads_in_SamutPrakan <- st_intersection(SamutPrakan_roads_intersection, SamutPra
 
 roads_in_SamutPrakan <- roads_in_SamutPrakan %>%
   filter(st_geometry_type(roads_in_SamutPrakan) %in% c("LINESTRING", "MULTILINESTRING"))
-
 
 roads_in_SamutPrakan <- st_cast(roads_in_SamutPrakan, "LINESTRING", group_or_split = TRUE)
 

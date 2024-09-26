@@ -1,0 +1,14 @@
+---
+title: "In class exercise 05"
+author: "Luo Yuming"
+date: "septerber 23, 2024"
+date-modified: "Last-modified"
+execute:
+  eval: true
+  echo: true
+  freeze: true
+  warning: false
+---
+```{r}
+pacman::p_load(sf, sfdep, tmap, tidyverse)
+```

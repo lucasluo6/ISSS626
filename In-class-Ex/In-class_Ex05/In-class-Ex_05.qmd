@@ -1,0 +1,165 @@
+---
+title: "In class exercise 05"
+author: "Luo Yuming"
+date: "septerber 23, 2024"
+date-modified: "Last-modified"
+execute:
+  eval: true
+  echo: true
+  freeze: true
+  warning: false
+---
+```{r}
+pacman::p_load(sf, sfdep, tmap, tidyverse)
+```
+#5.4.1 Deriving Queens Contiguity Weights: sfdep methods
+nb: A neighbor list object as created by st_neighbor.
+style: Default 'W' for row standardized weights. This value can also be 'B', 'C', 'U', 'minimax', and 'S'
+allow_zero: if TRUE, assigns zero as a lagged value to zone without neighbors.
+
+```{r}
+hunan <- st_read(dsn = "data/geospatial", 
+                 layer = "Hunan")
+hunan2012 <- read_csv("data/aspatial/Hunan_2012.csv")
+
+hunan_GDPPC <- left_join(hunan, hunan2012) %>%
+  select(1:4, 7, 15)                             
+
+wm_q=hunan_GDPPC%>%
+  mutate(nb=st_contiguity(geometry),
+         wt=st_weights(nb,
+                       style='W'),
+         .before=1)
+```
+#5.4.2 Computing Global Moran's I
+
+We use the global_moran() function to compute this.
+The below code chunk, using global_moran_test() helps us conduct the test easier.
+
+```{r}
+moranI= global_moran(wm_q$GDPPC,
+                     wm_q$nb,
+                     wm_q$wt)
+
+global_moran_test(wm_q$GDPPC,
+                  wm_q$nb,
+                  wm_q$wt)
+
+```
+Since p-value is less than 0.05, we infer that there is indeed a sign of positive autocorrelation.
+
+
+#5.4.3 Global Moran's Permutation Test
+
+In practice, we generally use Monte Carlo simulation to conduct tests. This is where the global_moran_perm() function comes into play. The nsim argument is key.
+
+```{r}
+global_moran_perm(wm_q$GDPPC,
+                  wm_q$nb,
+                  wm_q$wt,
+                  nsim = 99)
+```
+#5.4.4 Computing Local Moran's I
+
+In this section, we use the local_moran() function of the sfdep package.
+
+```{r}
+lisa=wm_q%>%
+  mutate(local_moran=local_moran(
+    GDPPC, nb, wt, nsim=99),
+    .before=1)%>%
+  unnest(local_moran)
+```
+unnest() helps us combine the data into the intended data-frame.
+
+#5.4.5 Visualizing p-value of local Moran's I
+
+```{r}
+tmap_mode('plot')
+tm_shape(lisa)+
+  tm_fill('p_ii_sim')+
+  tm_borders(alpha=0.5)+
+  tm_layout(main.title = 'p-value of Local Morans I',
+            main.title.size = 2)
+```
+##5.4.5.1 Visualizing Local Moran's I
+
+```{r}
+tm_shape(lisa)+
+  tm_fill('ii')+
+  tm_borders(alpha=0.5)+
+  tm_view(set.zoom.limits = c(6,8))+
+  tm_layout(main.title='Local Morans I of GDPPC',
+            main.title.size = 2)
+```
+##5.4.5.2 Visualizing both
+
+```{r}
+map1= tm_shape(lisa)+
+  tm_fill('p_ii_sim')+
+  tm_borders(alpha=0.5)+
+  tm_layout(main.title = 'p-value of Local Morans I',
+            main.title.size = 2)
+
+map2= tm_shape(lisa)+
+  tm_fill('ii')+
+  tm_borders(alpha=0.5)+
+  tm_view(set.zoom.limits = c(6,8))+
+  tm_layout(main.title='Local Morans I of GDPPC',
+            main.title.size = 2)
+
+tmap_arrange(map1,map2, ncol=2)
+```
+#5.4.6 Visualizing LISA map
+
+LISA map is a categorical map showing outliers and clusters. There are two types of outliers- high-low and low-high outliers. Likewise, there are two types of clusters namely High-High and Low-Low.
+
+In fact, LISA map is an interpreted map by combining local Moran's I of geographical areas and their respective p values.
+
+```{r}
+lisa_sig=lisa%>%
+  filter(p_ii<0.05)
+tmap_mode('plot')
+tm_shape(lisa)+
+  tm_polygons()+
+  tm_borders(alpha=0.5)+
+  tm_shape(lisa_sig)+
+  tm_fill('mean')+
+  tm_borders(alpha=0.4)
+```
+We see two outliers in the cluster on the North-East region of Hunan which contains mostly high-high regions. rm -f .git/index.lock
+
+#5.5 Computing Local Gi statistics
+
+```{r}
+wm_idw=hunan_GDPPC%>%
+  mutate(nb=st_contiguity(geometry),
+         wts=st_inverse_distance(nb, geometry, scale=1, alpha=1),
+         .before=1)
+```
+```{r}
+HCSA=wm_idw%>%
+  mutate(local_Gi=local_gstar_perm(
+    GDPPC, nb, wt, nsim=99),
+    .before=1)%>%
+  unnest(local_Gi)
+HCSA
+```
+```{r}
+tm_shape(HCSA)+
+  tm_fill('p_sim')+
+  tm_borders(alpha=0.5)
+```
+We can now visualize the hot and cold spots.
+
+```{r}
+#| eval: false
+HCSA_sig=HCSA%>%
+  filter(p_sim<0.05)
+tm_shape(HCSA)+
+  tm_polygons()+
+  tm_borders(alpha = 0.5)+
+  tm_shape(HCSA_sig)+
+  tm_fill('cluster')
+  tm_borders(alpha=0.4)
+```
