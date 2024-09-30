@@ -696,6 +696,95 @@ tmap_mode("plot")
 
 ```
 
+```{r, cache=TRUE}
+
+# 将 daytime_acc_projected 转换为 sf 对象
+daytime_acc_projected_sf <- st_as_sf(daytime_acc_projected)
+nighttime_acc_projected_sf <- st_as_sf(nighttime_acc_projected)
+weekday_acc_projected_sf <- st_as_sf(weekday_acc_projected)
+weekend_acc_projected_sf <- st_as_sf(weekend_acc_projected)
+
+kfun_daytime <- kfunctions(
+  lines = bmr_roads_simple,
+  points = daytime_acc_projected_sf,
+  start = 0,
+  end = 500,
+  step = 50,
+  width = 50,
+  nsim = 50,
+  resolution = 50,
+  verbose = TRUE,
+  conf_int = 0.05,
+  agg = 8
+)
+
+# 对夜间事故进行 K-function 分析
+kfun_nighttime <- kfunctions(
+  lines = bmr_roads_simple,
+  points = nighttime_acc_projected_sf,
+  start = 0,
+  end = 500,
+  step = 50,
+  width = 50,
+  nsim = 50,
+  resolution = 50,
+  verbose = TRUE,
+  conf_int = 0.05,
+  agg = 8
+)
 
 
+# 绘制白天的 K-function 结果
+kfun_daytime$plotk
 
+# 绘制夜间的 K-function 结果
+kfun_nighttime$plotk
+
+```
+Daytime vs. Nighttime: The K-function analysis shows that daytime accidents have a stronger clustering effect at shorter distances compared to nighttime accidents. This could suggest that traffic accidents during the day are more likely to occur in certain hotspots, such as busy intersections or congested areas.
+
+Overall Clustering: Both daytime and nighttime accidents display non-random spatial patterns, with accidents more likely to cluster in specific areas rather than being evenly distributed across the road network.
+
+```{r, cache=TRUE}
+# 对工作日事故进行 K-function 分析
+kfun_weekday <- kfunctions(
+  lines = bmr_roads_simple,
+  points = weekday_acc_projected_sf,
+  start = 0,
+  end = 500,
+  step = 50,
+  width = 50,
+  nsim = 50,
+  resolution = 50,
+  verbose = TRUE,
+  conf_int = 0.05,
+  agg = 8
+)
+
+# 对周末事故进行 K-function 分析
+kfun_weekend <- kfunctions(
+  lines = bmr_roads_simple,
+  points = weekend_acc_projected_sf,
+  start = 0,
+  end = 500,
+  step = 50,
+  width = 50,
+  nsim = 50,
+  resolution = 50,
+  verbose = TRUE,
+  conf_int = 0.05,
+  agg = 8
+)
+
+
+# 绘制工作日的 K-function 结果
+kfun_weekday$plotk
+
+# 绘制周末的 K-function 结果
+kfun_weekend$plotk
+```
+
+
+Accidents on weekdays show a stronger clustering pattern, possibly due to higher traffic congestion, especially during rush hours. The higher clustering seen on weekdays could be linked to more frequent commuting and transportation activities.
+
+On weekends, while clustering is still present, it is less pronounced. This may reflect more dispersed traffic or different types of journeys (e.g., leisure trips) being taken during weekends, leading to a less concentrated accident pattern.
