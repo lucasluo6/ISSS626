@@ -86,7 +86,8 @@ spacetime: Provides classes and methods for spatio-temporal data, allowing analy
 
 spatstat: A package for spatial point pattern analysis, providing tools for calculating K-functions and conducting spatial statistics over road networks.
 
-##Importing Data \### 1. Load and Clean Accident Data
+##Importing Data 
+### 1. Load and Clean Accident Data
 
 ```{r, cache=TRUE}
 #| eval: false
@@ -183,7 +184,7 @@ saveRDS(bmr_roads,"data/rds/bmr_roads.rds")
 bmr <- read_rds("data/rds/bmr.rds")
 ```
 
-```{r, cache=TRUE}
+```{r}
 bmr_roads <- read_rds("data/rds/bmr_roads.rds")
 ```
 
@@ -295,8 +296,8 @@ Bangkok likely has the highest density of accidents due to its high population d
 
 ### 1.road-data preparation：
 
-```{r, cache=TRUE}
-
+```{r}
+#| eval: false
 bmr_roads <- bmr_roads %>%
   filter(highway %in% c("motorway", "trunk", "primary", "secondary"))
 
@@ -696,13 +697,28 @@ tmap_mode("plot")
 
 ```
 
-```{r, cache=TRUE}
+```{r}
+# Remove large objects no longer needed
+rm(large_object_name)
+gc()  # Garbage collect memory
 
 # 将 daytime_acc_projected 转换为 sf 对象
 daytime_acc_projected_sf <- st_as_sf(daytime_acc_projected)
 nighttime_acc_projected_sf <- st_as_sf(nighttime_acc_projected)
 weekday_acc_projected_sf <- st_as_sf(weekday_acc_projected)
 weekend_acc_projected_sf <- st_as_sf(weekend_acc_projected)
+
+# Save K-function results to disk
+saveRDS(daytime_acc_projected_sf, "data/rds/kfun_daytime.rds")
+saveRDS(nighttime_acc_projected_sf, "data/rds/kfun_nighttime.rds")
+saveRDS(weekday_acc_projected_sf, "data/rds/kfun_weekday.rds")
+saveRDS(weekend_acc_projected_sf, "data/rds/kfun_weekend.rds")
+
+# Load them during rendering
+kfun_daytime <- readRDS("data/rds/kfun_daytime.rds")
+kfun_nighttime <- readRDS("data/rds/kfun_nighttime.rds")
+kfun_weekday <- readRDS("data/rds/kfun_weekday.rds")
+kfun_weekend <- readRDS("data/rds/kfun_weekend.rds")
 
 kfun_daytime <- kfunctions(
   lines = bmr_roads_simple,
@@ -741,6 +757,7 @@ kfun_daytime$plotk
 kfun_nighttime$plotk
 
 ```
+
 Daytime vs. Nighttime: The K-function analysis shows that daytime accidents have a stronger clustering effect at shorter distances compared to nighttime accidents. This could suggest that traffic accidents during the day are more likely to occur in certain hotspots, such as busy intersections or congested areas.
 
 Overall Clustering: Both daytime and nighttime accidents display non-random spatial patterns, with accidents more likely to cluster in specific areas rather than being evenly distributed across the road network.
@@ -783,7 +800,6 @@ kfun_weekday$plotk
 # 绘制周末的 K-function 结果
 kfun_weekend$plotk
 ```
-
 
 Accidents on weekdays show a stronger clustering pattern, possibly due to higher traffic congestion, especially during rush hours. The higher clustering seen on weekdays could be linked to more frequent commuting and transportation activities.
 

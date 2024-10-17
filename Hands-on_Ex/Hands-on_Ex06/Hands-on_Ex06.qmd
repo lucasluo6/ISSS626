@@ -1,5 +1,5 @@
 ---
-title: "In class exercise 05"
+title: "Hands on exercise 06"
 author: "Luo Yuming"
 date: "septerber 28, 2024"
 date-modified: "Last-modified"
