@@ -1,5 +1,5 @@
 ---
-title: "In-class_Ex03"
+title: "In-class_Ex09"
 author: "Luo Yuming"
 date: "Oct 28 2024"
 date-modified: "last-modified"
@@ -52,10 +52,6 @@ distmat <- ODMatrix %>%
 distmat_km <- as.matrix(distmat/1000)
 ```
 
-```{r}
-acc_Hansen <- tbl_df(acc_Hansen)
-hexagon_Hansen <- bind_cols(hexagons, acc_Hansen)
-```
 
 ```{r}
 acc_Hansen <- data.frame(ac(hexagons$demand,
@@ -77,9 +73,8 @@ hexagon_Hansen <- st_join(hexagon_Hansen, mpsz,
 
 ggbetweenstats(
   data= hexagon_Hansen,
-  x= REGION_N.x,
-  y=acc
-  Hansen,
+  x= REGION_N,
+  y=accHansen,
   type="p")
 
 ```
