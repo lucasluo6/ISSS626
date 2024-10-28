@@ -1,0 +1,13 @@
+---
+title: "Take Home Ex03"
+author: "Luo Yuming"
+date: "Oct 24 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  message: false
+  freeze: true
+---
+
+------------------------------------------------------------------------
