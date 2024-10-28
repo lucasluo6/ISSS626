@@ -86,8 +86,7 @@ spacetime: Provides classes and methods for spatio-temporal data, allowing analy
 
 spatstat: A package for spatial point pattern analysis, providing tools for calculating K-functions and conducting spatial statistics over road networks.
 
-##Importing Data 
-### 1. Load and Clean Accident Data
+##Importing Data \### 1. Load and Clean Accident Data
 
 ```{r, cache=TRUE}
 #| eval: false

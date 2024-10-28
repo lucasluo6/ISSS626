@@ -10,7 +10,6 @@ execute:
   warning: false
 ---
 
-
 ```{r}
 pacman::p_load(olsrr, corrplot, ggpubr, sf, spdep, GWmodel, tmap, tidyverse, gtsummary, ggstatsplot, sfdep, see)
 ```
@@ -29,6 +28,7 @@ mpsz = st_read(dsn = "data/geospatial", layer = "MP14_SUBZONE_WEB_PL")
 #| fig-height: 10
 ggcorrmat(condo_resale[, 5:23])
 ```
+
 ```{r}
 condo_resale_sf <- st_as_sf(condo_resale,
                             coords = c("LONGITUDE", "LATITUDE"),
@@ -48,12 +48,14 @@ condo.mlr <- lm(formula = SELLING_PRICE ~ AREA_SQM + AGE    +
                 data=condo_resale_sf)
 summary(condo.mlr)
 ```
+
 ```{r}
 ols_regress(condo.mlr)
 
 ols_vif_tol(condo.mlr)
 
 ```
+
 ```{r}
 condo_fw_mlr <- ols_step_forward_p(
   condo.mlr,
@@ -70,6 +72,7 @@ plot(condo_fw_mlr)
 ```{r}
 ols_plot_resid_fit(condo_fw_mlr$model)
 ```
+
 ```{r}
 mlr_output<- as.data.frame(condo_fw_mlr$model$residuals)%>%
   rename('FW_MLR_RES'="condo_fw_mlr$model$residuals")
@@ -104,7 +107,6 @@ tm_shape(condo_resale_sf) +
 
 tmap_mode("plot")
 ```
-
 
 ```{r}
 condo_resale_sf <- condo_resale_sf %>%
@@ -150,6 +152,7 @@ gwr.fixed <- gwr.basic(formula = SELLING_PRICE ~ AREA_SQM + AGE + PROX_CBD +
 
 gwr.fixed
 ```
+
 ```{r}
 gwr_adaptive_output<- as.data.frame(
   gwr.fixed$SDF)%>%
@@ -159,7 +162,6 @@ gwr_adaptive_output<- as.data.frame(
 ```{r}
 gwr_sf_adaptive<- cbind(condo_resale_sf,gwr_adaptive_output)
 ```
-
 
 ```{r}
 tmap_mode("view")
@@ -172,14 +174,3 @@ tm_shape(gwr_sf_adaptive) +
           border.lwd = 1) +
   tm_view(set.zoom.limits = c(11,14))
 ```
-
-
-
-
-
-
-
-
-
-
-
