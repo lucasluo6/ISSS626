@@ -17,29 +17,37 @@ editor:
     wrap: 72
 ---
 
-# Overview 
+# Overview
 
-## Background 
+## Background
 
-Tourism significantly contributes to Thailand's economy, accounting for roughly 20% of the GDP. The sector was severely impacted during the COVID-19 pandemic but has been on a recovery path since late 2021. Tourism, however, is unevenly distributed across different regions. This analysis aims to explore the spatial patterns of tourism activity across provinces and identify clusters, outliers, and hot/cold spots through spatial autocorrelation and clustering techniques.
+Tourism significantly contributes to Thailand's economy, accounting for
+roughly 20% of the GDP. The sector was severely impacted during the
+COVID-19 pandemic but has been on a recovery path since late 2021.
+Tourism, however, is unevenly distributed across different regions. This
+analysis aims to explore the spatial patterns of tourism activity across
+provinces and identify clusters, outliers, and hot/cold spots through
+spatial autocorrelation and clustering techniques.
 
+## Objectives
 
+1.Determine spatial clustering: Identify if tourism indicators (e.g.,
+revenue, number of tourists) are spatially clustered, dispersed, or
+random across provinces. 2.Detect clusters/outliers: Find provinces that
+exhibit unusually high or low tourism metrics compared to their
+neighbors. 3.Visualize spatial patterns: Create maps to display the
+results of clustering and spatial autocorrelation analysis.
 
-## Objectives 
+# Data
 
-1.Determine spatial clustering: Identify if tourism indicators (e.g., revenue, number of tourists) are spatially clustered, dispersed, or random across provinces.
-2.Detect clusters/outliers: Find provinces that exhibit unusually high or low tourism metrics compared to their neighbors.
-3.Visualize spatial patterns: Create maps to display the results of clustering and spatial autocorrelation analysis.
+## Loading Packages
 
-# Data 
-
-## Loading Packages 
-We will use several R packages designed for geospatial analysis and clustering, including: 
-sf: for handling spatial data. 
-spdep: for spatial autocorrelation and spatial cluster analysis.
-ggplot2 and tmap: for data visualization and geovisualization. 
-ClustGeo: for spatially constrained hierarchical clustering.
-tidyverse: for datawrangling and transformation.
+We will use several R packages designed for geospatial analysis and
+clustering, including: sf: for handling spatial data. spdep: for spatial
+autocorrelation and spatial cluster analysis. ggplot2 and tmap: for data
+visualization and geovisualization. ClustGeo: for spatially constrained
+hierarchical clustering. tidyverse: for datawrangling and
+transformation.
 
 ```{r}
 
@@ -50,8 +58,12 @@ pacman::p_load(spdep, tmap, sf, ClustGeo,
 
 ##Dataset Two datasets will be used for this analysis:
 
-Thailand Domestic Tourism Statistics (2019–2023): This dataset contains key tourism indicators like the number of tourists, occupancy rates, and revenue, recorded at the provincial level. 
-Thailand Subnational Administrative Boundaries: This spatial dataset provides the geographic boundaries of Thailand's provinces and will be used for mapping and spatial analysis.
+Thailand Domestic Tourism Statistics (2019–2023): This dataset contains
+key tourism indicators like the number of tourists, occupancy rates, and
+revenue, recorded at the provincial level. Thailand Subnational
+Administrative Boundaries: This spatial dataset provides the geographic
+boundaries of Thailand's provinces and will be used for mapping and
+spatial analysis.
 
 # 1. Data Import and Preparation
 
@@ -123,7 +135,10 @@ print(mismatches)  # This will show any provinces with different names in the da
 
 ## 1.3 Resolving Name Inconsistencies:
 
-If mismatches are found, we will correct the province names in the tourism dataset to match those in the "ADM1_EN" column from the spatial dataset. For example, let’s assume that "Phra Nakhon Si Ayutthaya" is spelled differently in both datasets.
+If mismatches are found, we will correct the province names in the
+tourism dataset to match those in the "ADM1_EN" column from the spatial
+dataset. For example, let’s assume that "Phra Nakhon Si Ayutthaya" is
+spelled differently in both datasets.
 
 ```{r}
 # Step 6: Correct mismatches in the tourism dataset (example shown for one mismatch)
@@ -258,8 +273,10 @@ moran.plot(tourism_sf$revenue_all, tourism_weights_queen,
            xlab = "Revenue", ylab = "Spatial Lag of Revenue")
 
 ```
-###3.1.2 Local Measures of Spatial Autocorrelation (LISA)
-#### 3.1.2.1 Calculating Local Moran’s
+
+###3.1.2 Local Measures of Spatial Autocorrelation (LISA) \#### 3.1.2.1
+Calculating Local Moran’s
+
 ```{r}
 # Compute Local Moran’s I (LISA)
 local_moran <- localmoran(tourism_sf$revenue_all, tourism_weights_queen, zero.policy = TRUE)
@@ -268,7 +285,9 @@ local_moran <- localmoran(tourism_sf$revenue_all, tourism_weights_queen, zero.po
 tourism_sf$local_moran_I <- local_moran[,1]
 tourism_sf$p_value <- local_moran[,5]
 ```
+
 #### 3.1.2.2 Visualizing Local Moran’s I Values
+
 ```{r}
 # Map showing local Moran's I values
 tm_shape(tourism_sf) +
@@ -277,6 +296,7 @@ tm_shape(tourism_sf) +
 ```
 
 ####3.1.2.3 Mapping Local Moran’s I P-values
+
 ```{r}
 # Map showing p-values of Local Moran’s I
 tm_shape(tourism_sf) +
@@ -284,7 +304,9 @@ tm_shape(tourism_sf) +
   tm_borders(alpha = 0.5)
 
 ```
+
 ####3.1.2.4
+
 ```{r}
 # Map showing p-values of Local Moran’s I
 # Visualizing significant clusters (areas where p-value < 0.05)
@@ -295,7 +317,9 @@ tm_shape(tourism_sf) +
 ```
 
 ## 3.2 Hierarchical Cluster Analysis
+
 ###3.2.1 Standardizing and Handling Missing Data
+
 ```{r}
 # Step 1: Standardize tourism variables for clustering and handle missing values
 tourism_sf_clean <- tourism_sf %>%
@@ -317,7 +341,9 @@ str(tourism_sf_clean %>% select(no_tourist_all, ratio_tourist_stay, revenue_all)
 
 
 ```
+
 ###3.2.2 Calculating Euclidean Distance Matrix
+
 ```{r}
 # Step 3: Calculate the Euclidean distance matrix
 proxmat <- dist(tourism_sf_clean %>%
@@ -326,7 +352,9 @@ proxmat <- dist(tourism_sf_clean %>%
 # Check the distance matrix
 print(proxmat)
 ```
+
 ###3.2.3 Perform Hierarchical Clustering
+
 ```{r}
 # Step 1: Perform hierarchical clustering using Ward's method
 hclust_ward <- hclust(proxmat, method = 'ward.D')
@@ -346,7 +374,9 @@ tm_shape(tourism_sf) +
 ```
 
 ## 3.3 Spatially Constrained Clustering (SKATER Method)
+
 ### 3.3.1 Queen's Contiguity Neighbor List
+
 ```{r}
 summary(tourism_nb_queen)
 
@@ -357,57 +387,83 @@ coords <- st_coordinates(st_centroid(st_geometry(tourism_sf)))
 plot(st_geometry(tourism_sf), border = grey(.5))
 plot(tourism_nb_queen, coords, col = "blue", add = TRUE)
 ```
+
 <!-- ###3.3.2Compute Edge Costs for the SKATER Method -->
+
 <!-- ```{r} -->
+
 <!-- # Compute the edge costs for clustering based on tourism variables -->
+
 <!-- lcosts <- nbcosts(tourism_nb_queen, tourism_sf %>% select(no_tourist_all, ratio_tourist_stay, revenue_all)) -->
 
 <!-- # Create a list of spatial weights using the edge costs -->
+
 <!-- tourism_weights <- nb2listw(tourism_nb_queen, lcosts, style = "B") -->
+
 <!-- summary(tourism_weights) -->
+
 <!-- ``` -->
 
 <!-- ###3.3.3 Compute the Minimum Spanning Tree and Perform SKATER Clustering -->
+
 <!-- ```{r} -->
+
 <!-- # Compute the minimum spanning tree -->
+
 <!-- mst <- mstree(tourism_weights) -->
 
 <!-- # Perform SKATER clustering -->
+
 <!-- skater_clusters <- spdep::skater(mst[, 1:2], tourism_sf %>% select(no_tourist_all, ratio_tourist_stay, revenue_all), ncuts = 4) -->
 
 <!-- # Check the cluster assignments -->
+
 <!-- ccs5 <- skater_clusters$groups -->
+
 <!-- table(ccs5) -->
+
 <!-- ``` -->
 
 <!-- ###3.3.4Visualize the Clusters on a Map -->
+
 <!-- ```{r} -->
+
 <!-- # Append the clusters to the dataset -->
+
 <!-- tourism_sf$spatial_cluster <- as.factor(skater_clusters$groups) -->
 
 <!-- # Visualize the SKATER clusters -->
+
 <!-- tm_shape(tourism_sf) + -->
+
 <!--   tm_polygons("spatial_cluster", title = "SKATER Clusters") + -->
+
 <!--   tm_borders() + -->
+
 <!--   tm_layout(main.title = "Spatially Constrained Clustering (SKATER Method)") -->
+
 <!-- ``` -->
 
 <!-- # Final Comparison and Conclusion -->
+
 <!-- ```{r} -->
+
 <!-- # Compare both cluster results side-by-side -->
+
 <!-- tm_hierarchical <- tm_shape(tourism_sf) + -->
+
 <!--   tm_polygons("cluster", title = "Hierarchical Clustering") + -->
+
 <!--   tm_borders() -->
 
 <!-- tm_spatial <- tm_shape(tourism_sf) + -->
+
 <!--   tm_polygons("spatial_cluster", title = "SKATER Clustering") + -->
+
 <!--   tm_borders() -->
 
 <!-- # Arrange both visualizations side-by-side -->
+
 <!-- tmap_arrange(tm_hierarchical, tm_spatial, ncol = 2) -->
+
 <!-- ``` -->
-
-
-
-
-
