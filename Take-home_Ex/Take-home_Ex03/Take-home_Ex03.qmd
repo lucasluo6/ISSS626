@@ -1,5 +1,5 @@
 ---
-title: "Take Home Ex03"
+title: "Take-home Exercise 3b: Predicting HDB Resale Prices with Geographically Weighted Machine Learning Methods"
 author: "Luo Yuming"
 date: "Oct 24 2024"
 date-modified: "last-modified"
@@ -11,3 +11,325 @@ execute:
 ---
 
 ------------------------------------------------------------------------
+
+## 1. Overview
+
+This exercise focuses on predicting HDB resale prices in Singapore using geographically weighted machine learning methods. By incorporating spatial components, we aim to understand regional patterns and improve prediction accuracy.
+
+------------------------------------------------------------------------
+
+## 2. Objectives
+
+The goals of this exercise are to:
+
+1.  Apply geographically weighted machine learning models to predict HDB resale prices.
+2.  Assess the performance of different models, including random forest and geographically weighted random forest (GWRF).
+3.  Visualize and interpret spatial variations in predicted prices.
+
+------------------------------------------------------------------------
+
+## 3. Getting Started
+
+### 3.1 Required Packages
+
+In this exercise, we will use the following packages:
+
+| Package       | Description                                                                                                                                                                                        |
+|-------------|-----------------------------------------------------------|
+| **sf**        | Provides functions for reading, processing, and visualizing spatial data in the "Simple Features" format, enabling spatial data handling in R.                                                     |
+| **spdep**     | Provides tools for spatial dependency modeling, including spatial weights and measures for spatial autocorrelation, such as Moran's I, useful for detecting spatial patterns.                      |
+| **tidyverse** | A suite of R packages designed for data manipulation (`dplyr`, `tidyr`), visualization (`ggplot2`), and other common data science tasks, improving data handling and analysis.                     |
+| **tmap**      | A flexible package for creating static and interactive maps, allowing cartographic-quality visualizations of spatial data.                                                                         |
+| **GWmodel**   | Contains functions for Geographically Weighted Regression (GWR) and other spatially weighted models, allowing local modeling of spatial data where relationships can vary across geographic space. |
+| **caret**     | A comprehensive package for machine learning, providing tools for model training, tuning, and evaluation, supporting methods like cross-validation and hyperparameter tuning.                      |
+| **ranger**    | An efficient implementation of the random forest algorithm optimized for large datasets, used for predictive modeling and capable of handling both classification and regression tasks.            |
+| **httr**      | Facilitates HTTP requests in R, useful for connecting to APIs like OneMap to retrieve geographic coordinates based on addresses.                                                                   |
+| **jsonlite**  | A package for working with JSON data in R, enabling easy conversion of JSON data from web APIs into R data frames.                                                                                 |
+
+```{r}
+# Load necessary packages
+pacman::p_load(tidyverse, sf, spdep, GWmodel, tmap, caret, ranger, httr, jsonlite, ggplot2, ggpubr)
+```
+
+### 3.2 The Data
+
+Dataset Name Description Format Source HDB Resale Transactions Monthly data on HDB resale transactions, including prices, flat types, and locations. CSV Singapore Open Data Portal Geographical Coordinates Coordinates for each address to map locations. API OneMap API
+
+## 4. Data Preprocessing
+
+### 4.1 Loading and Filtering Resale Data
+
+#### 4.1.1 Geospatial Data
+
+```{r}
+mpsz <- st_read(dsn = "data/geospatial", layer = "MP14_SUBZONE_WEB_PL") %>%
+  st_transform(3414)
+```
+
+```{r}
+bus_stops <- st_read(dsn = "data/geospatial", layer = "BusStop") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+train_stations <- st_read(dsn = "data/geospatial", layer = "RapidTransitSystemStation") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+hawker_center <- st_read("data/geospatial/HawkerCentresGEOJSON.geojson") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+Clinics <- st_read("data/geospatial/CHASClinics.geojson") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+supermarkets <- st_read("data/geospatial/SupermarketsGEOJSON.geojson") %>%
+  st_transform(crs = 3414)
+```
+```{r}
+schoolzone <- st_read("data/geospatial/LTASchoolZone.geojson") %>%
+  st_transform(crs = 3414)
+```
+
+
+
+
+
+```{r}
+resale <- read_csv("data/aspatial/resale.csv") %>%
+  filter(month >= "2023-01" & month <= "2024-09")
+```
+
+::: panel-tabset
+Note loads the resale data and filters it to only include transactions from January 2023 to September 2024. glimpse() provides an overview of the data structure and variables.
+:::
+
+### 4.2 Data Transformation
+
+```{r}
+resale_tidy <- resale %>%
+  mutate(address = paste(block,street_name)) %>%
+  mutate(remaining_lease_yr = as.integer(
+    str_sub(remaining_lease, 0, 2)))%>%
+  mutate(remaining_lease_mth = as.integer(
+    str_sub(remaining_lease, 9, 11)))
+```
+
+::: panel-tabset
+Note This transformation combines block and street name into a single address field and extracts remaining_lease_yr and remaining_lease_mth for further analysis.
+:::
+
+### 4.3 Selecting September 2024 Transactions and Unique Addresses
+
+```{r}
+resale_selected <- resale_tidy %>%
+  filter(month == "2024-09")
+```
+
+```{r}
+add_list <- sort(unique(resale_selected$address))
+```
+
+::: panel-tabset
+Note filters the dataset to only include September 2024 transactions and extracts unique addresses to be geocoded.
+:::
+
+### 4.4 Geocoding Addresses with OneMap API
+
+```{r}
+get_coords <- function(add_list){
+  
+  # Create a data frame to store all retrieved coordinates
+  postal_coords <- data.frame()
+    
+  for (i in add_list){
+    #print(i)
+
+    r <- GET('https://www.onemap.gov.sg/api/common/elastic/search?',
+           query=list(searchVal=i,
+                     returnGeom='Y',
+                     getAddrDetails='Y'))
+    data <- fromJSON(rawToChar(r$content))
+    found <- data$found
+    res <- data$results
+    
+    # Create a new data frame for each address
+    new_row <- data.frame()
+    
+    # If single result, append 
+    if (found == 1){
+      postal <- res$POSTAL 
+      lat <- res$LATITUDE
+      lng <- res$LONGITUDE
+      new_row <- data.frame(address= i, 
+                            postal = postal, 
+                            latitude = lat, 
+                            longitude = lng)
+    }
+    
+    # If multiple results, drop NIL and append top 1
+    else if (found > 1){
+      # Remove those with NIL as postal
+      res_sub <- res[res$POSTAL != "NIL", ]
+      
+      # Set as NA first if no Postal
+      if (nrow(res_sub) == 0) {
+          new_row <- data.frame(address= i, 
+                                postal = NA, 
+                                latitude = NA, 
+                                longitude = NA)
+      }
+      
+      else{
+        top1 <- head(res_sub, n = 1)
+        postal <- top1$POSTAL 
+        lat <- top1$LATITUDE
+        lng <- top1$LONGITUDE
+        new_row <- data.frame(address= i, 
+                              postal = postal, 
+                              latitude = lat, 
+                              longitude = lng)
+      }
+    }
+
+    else {
+      new_row <- data.frame(address= i, 
+                            postal = NA, 
+                            latitude = NA, 
+                            longitude = NA)
+    }
+    
+    # Add the row
+    postal_coords <- rbind(postal_coords, new_row)
+  }
+  return(postal_coords)
+}
+```
+
+```{r}
+coords <- get_coords(add_list)
+```
+
+::: panel-tabset
+Note This function get_coords uses the OneMap API to retrieve coordinates (latitude and longitude) for each unique address in add_list. It handles cases where multiple or no results are returned for an address.
+:::
+
+### 4.5 Saving the Geocoded Coordinates
+
+```{r}
+write_rds(coords, "data/rds/coords.rds")
+```
+
+::: panel-tabset
+Note The geocoded coordinates are saved to an RDS file to avoid re-running the API calls, making future analyses more efficient.
+:::
+
+### 4.6 Data Wrangling and Joining Coordinates
+
+```{r}
+# Join coordinates with filtered resale data
+resale_geo <- resale_selected %>%
+  left_join(coords, by = "address") %>%
+  filter(!is.na(latitude) & !is.na(longitude))
+```
+
+::: panel-tabset
+Note This code joins the geocoded coordinates with the filtered resale data, creating a geospatial dataset with latitude and longitude fields for further spatial analysis.
+:::
+
+## 5. Exploratory Data Analysis (EDA)
+
+In this section, we’ll use statistical graphics functions from packages like ggplot2 and tmap to conduct exploratory data analysis (EDA) of HDB resale data. This analysis will help us understand the feature distributions and spatial patterns of the data.
+
+### 5.1 Analyzing HDB Resale Price Distribution
+
+We start by plotting the distribution of resale prices to observe skewness or outliers in the data. The code below creates an initial histogram of resale price distribution:
+
+```{r}
+# Histogram showing HDB resale price distribution
+ggplot(data = resale_geo, aes(x = resale_price)) +
+  geom_histogram(bins = 20, color = "black", fill = "light blue") +
+  labs(title = "Distribution of HDB Resale Prices", x = "Resale Price", y = "Frequency")
+```
+
+::: panel-tabset
+Note This plot shows the distribution of HDB resale prices. If the distribution is right-skewed (indicating more units sold at relatively lower prices), we may consider log-transforming the data for normalization.
+:::
+
+### 5.2 Log Transformation of Price Distribution
+
+Log-transforming resale prices can help reduce skewness, making the model more stable when handling price data. The following code creates a histogram for the log-transformed resale prices:
+
+```{r}
+# Log transformation
+resale_geo <- resale_geo %>%
+  mutate(log_resale_price = log(resale_price))
+
+# Plotting log-transformed price distribution
+ggplot(data=resale_geo, aes(x=log_resale_price)) +
+  geom_histogram(bins=20, color="black", fill="light blue") +
+  labs(title = "Log-Transformed Distribution of HDB Resale Prices", x = "Log Resale Price", y = "Frequency")
+```
+
+After log transformation, the distribution shows less skewness, which can help stabilize model performance.
+
+### 5.3 Distribution Analysis of Multiple Variables
+
+To better understand the distribution of other important variables, we can generate multiple histograms using ggarrange(). The code below shows histograms for floor area, remaining lease, storey range, and other key features:
+
+```{r}
+# Individual histograms for several variables
+floor_area <- ggplot(data=resale_geo, aes(x=floor_area_sqm)) + 
+  geom_histogram(bins=20, color="black", fill="light blue") + labs(title = "Floor Area (sqm)")
+
+remaining_lease <- ggplot(data=resale_geo, aes(x=remaining_lease_yr)) +
+  geom_histogram(bins=20, color="black", fill="light blue") + labs(title = "Remaining Lease (Years)")
+
+storey_range <- ggplot(data=resale_geo, aes(x=storey_range)) +
+  geom_bar(color="black", fill="light blue") + labs(title = "Storey Range")
+
+# Combine histograms using ggarrange()
+ggarrange(floor_area, remaining_lease, storey_range, ncol = 2, nrow = 2)
+```
+
+These multiple variable distribution plots allow us to better understand the range and shape of each feature.
+
+### 5.4 Spatial Distribution of Resale Prices
+
+By visualizing the spatial distribution of HDB resale prices, we can observe price differences across regions and identify potential spatial clustering patterns.
+
+<!--```{r}
+# Visualizing the geographical distribution of resale prices with tmap
+tmap_mode("view")
+tm_shape(mpsz_svy21) +
+  tm_polygons() +
+  tm_shape(resale_geo) +
+  tm_dots(col = "resale_price", alpha = 0.6, style = "quantile", title = "Resale Price") +
+  tm_view(set.zoom.limits = c(11, 14))
+```-->
+
+This map shows the spatial distribution of HDB resale prices, helping identify regions with high and low resale prices.
+
+### 5.5 Analyzing the Relationship Between Price and Other Variables
+
+We can use scatter plots to explore relationships between different variables, such as resale price and floor area, resale price and remaining lease, etc. The code below creates a scatter plot between price and floor area:
+
+```{r}
+# Scatter plot for resale price vs floor area
+ggplot(data=resale_geo, aes(x=floor_area_sqm, y=resale_price)) +
+  geom_point(alpha=0.5) +
+  labs(title = "Scatter Plot of Resale Price vs Floor Area", x = "Floor Area (sqm)", y = "Resale Price") +
+  geom_smooth(method="lm", color="red")
+```
+
+### 5.6 Correlation Matrix of Features
+
+By visualizing a correlation matrix heatmap, we can identify highly correlated features, which may help in feature selection for subsequent modeling.
+
+
+
+
