@@ -9,7 +9,7 @@
 <meta name="author" content="Luo Yuming">
 <meta name="dcterms.date" content="2024-10-18">
 
-<title>ISSS626-Geospatial Analytics and Applications - Hands-on_Ex03</title>
+<title>ISSS626-Geospatial Analytics and Applications - Hands-on_Ex08</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -158,6 +158,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex07/Hands-on_Ex07.html" rel="" target="">
  <span class="dropdown-text">Hands-on Exercise 7</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex08/Hands-on_Ex08.html" rel="" target="">
+ <span class="dropdown-text">Hands-on Exercise 8</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex09/Hands-on_Ex09.html" rel="" target="">
+ <span class="dropdown-text">Hands-on Exercise 9</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex10/Hands-on_Ex10.html" rel="" target="">
+ <span class="dropdown-text">Hands-on Exercise 10</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex10/Hands-on_Ex10(2).html" rel="" target="">
+ <span class="dropdown-text">Hands-on Exercise 10 b</span></a>
+  </li>  
     </ul>
   </li>
   <li class="nav-item dropdown ">
@@ -193,6 +209,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="dropdown-item" href="../../In-class-Ex/In-class_Ex07/In-class_Ex07.html" rel="" target="">
  <span class="dropdown-text">In-class Exercise 7</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../../In-class-Ex/In-class_Ex08/In-class_Ex08.html" rel="" target="">
+ <span class="dropdown-text">In-class Exercise 8</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../In-class-Ex/In-class_Ex09/In-class_Ex09.html" rel="" target="">
+ <span class="dropdown-text">In-class Exercise 9</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../In-class-Ex/In-class_Ex10/In-class_Ex10.html" rel="" target="">
+ <span class="dropdown-text">In-class Exercise 10</span></a>
+  </li>  
     </ul>
   </li>
   <li class="nav-item dropdown ">
@@ -207,6 +235,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li>
     <a class="dropdown-item" href="../../Take-home_Ex/Take-home_Ex02/Take-home Ex02.html" rel="" target="">
  <span class="dropdown-text">Take-home Exercise 2</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Take-home_Ex/Take-home_Ex03/Take-home Ex03.html" rel="" target="">
+ <span class="dropdown-text">Take-home Exercise 3</span></a>
   </li>  
     </ul>
   </li>
@@ -272,7 +304,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Hands-on_Ex03</h1>
+<h1 class="title">Hands-on_Ex08</h1>
 </div>
 
 
@@ -296,7 +328,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Modified</div>
     <div class="quarto-title-meta-contents">
-      <p class="date-modified">October 28, 2024</p>
+      <p class="date-modified">November 11, 2024</p>
     </div>
   </div>
     
@@ -527,7 +559,7 @@ Adaptive bandwidth: 40 CV score: 6.780974e+12 </code></pre>
 <pre><code>   ***********************************************************************
    *                       Package   GWmodel                             *
    ***********************************************************************
-   Program starts at: 2024-10-28 01:10:55.929714 
+   Program starts at: 2024-11-11 03:52:43.83451 
    Call:
    gwr.basic(formula = resale_price ~ floor_area_sqm + storey_order + 
     remaining_lease_mths + PROX_CBD + PROX_ELDERLYCARE + PROX_HAWKER + 
@@ -635,7 +667,7 @@ Adaptive bandwidth: 40 CV score: 6.780974e+12 </code></pre>
    Adjusted R-square value:  0.9611535 
 
    ***********************************************************************
-   Program stops at: 2024-10-28 01:11:36.873805 </code></pre>
+   Program stops at: 2024-11-11 03:53:25.624059 </code></pre>
 </div>
 </div>
 </section>
@@ -917,7 +949,7 @@ Mean squared error (OOB): 970053877.391</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>
-Calculation time (in seconds): 42.5488</code></pre>
+Calculation time (in seconds): 53.4918</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_rds</span>(gwRF_adaptive, <span class="st">"data/model/gwRF_adaptive.rds"</span>)</span>
 <span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>gwRF_adaptive <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">"data/model/gwRF_adaptive.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
