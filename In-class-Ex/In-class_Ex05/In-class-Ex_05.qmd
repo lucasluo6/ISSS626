@@ -9,13 +9,12 @@ execute:
   freeze: true
   warning: false
 ---
+
 ```{r}
 pacman::p_load(sf, sfdep, tmap, tidyverse)
 ```
-#5.4.1 Deriving Queens Contiguity Weights: sfdep methods
-nb: A neighbor list object as created by st_neighbor.
-style: Default 'W' for row standardized weights. This value can also be 'B', 'C', 'U', 'minimax', and 'S'
-allow_zero: if TRUE, assigns zero as a lagged value to zone without neighbors.
+
+#5.4.1 Deriving Queens Contiguity Weights: sfdep methods nb: A neighbor list object as created by st_neighbor. style: Default 'W' for row standardized weights. This value can also be 'B', 'C', 'U', 'minimax', and 'S' allow_zero: if TRUE, assigns zero as a lagged value to zone without neighbors.
 
 ```{r}
 hunan <- st_read(dsn = "data/geospatial", 
@@ -31,10 +30,10 @@ wm_q=hunan_GDPPC%>%
                        style='W'),
          .before=1)
 ```
+
 #5.4.2 Computing Global Moran's I
 
-We use the global_moran() function to compute this.
-The below code chunk, using global_moran_test() helps us conduct the test easier.
+We use the global_moran() function to compute this. The below code chunk, using global_moran_test() helps us conduct the test easier.
 
 ```{r}
 moranI= global_moran(wm_q$GDPPC,
@@ -46,8 +45,8 @@ global_moran_test(wm_q$GDPPC,
                   wm_q$wt)
 
 ```
-Since p-value is less than 0.05, we infer that there is indeed a sign of positive autocorrelation.
 
+Since p-value is less than 0.05, we infer that there is indeed a sign of positive autocorrelation.
 
 #5.4.3 Global Moran's Permutation Test
 
@@ -59,6 +58,7 @@ global_moran_perm(wm_q$GDPPC,
                   wm_q$wt,
                   nsim = 99)
 ```
+
 #5.4.4 Computing Local Moran's I
 
 In this section, we use the local_moran() function of the sfdep package.
@@ -70,6 +70,7 @@ lisa=wm_q%>%
     .before=1)%>%
   unnest(local_moran)
 ```
+
 unnest() helps us combine the data into the intended data-frame.
 
 #5.4.5 Visualizing p-value of local Moran's I
@@ -82,6 +83,7 @@ tm_shape(lisa)+
   tm_layout(main.title = 'p-value of Local Morans I',
             main.title.size = 2)
 ```
+
 ##5.4.5.1 Visualizing Local Moran's I
 
 ```{r}
@@ -92,6 +94,7 @@ tm_shape(lisa)+
   tm_layout(main.title='Local Morans I of GDPPC',
             main.title.size = 2)
 ```
+
 ##5.4.5.2 Visualizing both
 
 ```{r}
@@ -110,6 +113,7 @@ map2= tm_shape(lisa)+
 
 tmap_arrange(map1,map2, ncol=2)
 ```
+
 #5.4.6 Visualizing LISA map
 
 LISA map is a categorical map showing outliers and clusters. There are two types of outliers- high-low and low-high outliers. Likewise, there are two types of clusters namely High-High and Low-Low.
@@ -127,6 +131,7 @@ tm_shape(lisa)+
   tm_fill('mean')+
   tm_borders(alpha=0.4)
 ```
+
 We see two outliers in the cluster on the North-East region of Hunan which contains mostly high-high regions. rm -f .git/index.lock
 
 #5.5 Computing Local Gi statistics
@@ -137,6 +142,7 @@ wm_idw=hunan_GDPPC%>%
          wts=st_inverse_distance(nb, geometry, scale=1, alpha=1),
          .before=1)
 ```
+
 ```{r}
 HCSA=wm_idw%>%
   mutate(local_Gi=local_gstar_perm(
@@ -145,11 +151,13 @@ HCSA=wm_idw%>%
   unnest(local_Gi)
 HCSA
 ```
+
 ```{r}
 tm_shape(HCSA)+
   tm_fill('p_sim')+
   tm_borders(alpha=0.5)
 ```
+
 We can now visualize the hot and cold spots.
 
 ```{r}

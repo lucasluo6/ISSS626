@@ -29,8 +29,11 @@ GDPPC_st <- spacetime(GDPPC, hunan,
 is_spacetime_cube(GDPPC_st)
 ```
 :::
-# Computing Gi*
+
+# Computing Gi\*
+
 ## Deriving the spatial weights
+
 ```{r}
 GDPPC_nb <-GDPPC_st %>%
   activate("geometry")%>%
@@ -60,7 +63,9 @@ cbg <- gi_stars %>%
   filter(County=="Changsha") |>
   select(County, Year, gi_star)
 ```
+
 ##Mann-Kendall test on Gi
+
 ```{r}
 ggplot(data = cbg,
        aes(x= Year,
@@ -70,6 +75,7 @@ ggplot(data = cbg,
 ```
 
 ##Interacive Mann-Kendall plot
+
 ```{r}
 p <- ggplot(data = cbg,
        aes(x= Year,
@@ -78,6 +84,7 @@ p <- ggplot(data = cbg,
   theme_light()
 ggplotly()
 ```
+
 ```{r}
 cbg %>%
   summarise(mk = list(
@@ -85,6 +92,7 @@ cbg %>%
       Kendall::MannKendall(gi_star))))%>%
     tidyr::unnest_wider(mk)
 ```
+
 ```{r}
 ehsa <- gi_stars %>%
   group_by(County)%>%
@@ -94,7 +102,9 @@ ehsa <- gi_stars %>%
     tidyr::unnest_wider(mk)
 head(ehsa)
 ```
+
 ::::{.column}
+
 ```{r}
 ehsa <- emerging_hotspot_analysis(
   x=GDPPC_st,
@@ -104,7 +114,9 @@ ehsa <- emerging_hotspot_analysis(
   )
 
 ```
+
 # Visualising the distribution of EHSA classes
+
 ```{r}
 ggplot(data = ehsa,
        aes(x = classification))+
@@ -129,9 +141,3 @@ tm_shape(ehsa_sig) +
   tm_fill("classification") +
   tm_borders(alpha = 0.4)
 ```
-
-
-
-
-
-

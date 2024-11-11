@@ -1,5 +1,5 @@
 ---
-title: "In class exercise 05"
+title: "Hands on exercise 05"
 author: "Luo Yuming"
 date: "septerber 28, 2024"
 date-modified: "Last-modified"
@@ -9,64 +9,49 @@ execute:
   freeze: true
   warning: false
 ---
-#9  Global Measures of Spatial Autocorrelation
-#9.1 Overview
-In this hands-on exercise, you will learn how to compute Global Measures of Spatial Autocorrelation (GMSA) by using spdep package. By the end to this hands-on exercise, you will be able to:
 
-import geospatial data using appropriate function(s) of sf package,
-import csv file using appropriate function of readr package,
-perform relational join using appropriate join function of dplyr package,
-compute Global Spatial Autocorrelation (GSA) statistics by using appropriate functions of spdep package,
-plot Moran scatterplot,
-compute and plot spatial correlogram using appropriate function of spdep package.
-provide statistically correct interpretation of GSA statistics.
+#9 Global Measures of Spatial Autocorrelation #9.1 Overview In this hands-on exercise, you will learn how to compute Global Measures of Spatial Autocorrelation (GMSA) by using spdep package. By the end to this hands-on exercise, you will be able to:
 
-#9.2 Getting Started
-##9.2.1 The analytical question
-In spatial policy, one of the main development objective of the local government and planners is to ensure equal distribution of development in the province. Our task in this study, hence, is to apply appropriate spatial statistical methods to discover if development are even distributed geographically. If the answer is No. Then, our next question will be “is there sign of spatial clustering?”. And, if the answer for this question is yes, then our next question will be “where are these clusters?”
+import geospatial data using appropriate function(s) of sf package, import csv file using appropriate function of readr package, perform relational join using appropriate join function of dplyr package, compute Global Spatial Autocorrelation (GSA) statistics by using appropriate functions of spdep package, plot Moran scatterplot, compute and plot spatial correlogram using appropriate function of spdep package. provide statistically correct interpretation of GSA statistics.
+
+#9.2 Getting Started ##9.2.1 The analytical question In spatial policy, one of the main development objective of the local government and planners is to ensure equal distribution of development in the province. Our task in this study, hence, is to apply appropriate spatial statistical methods to discover if development are even distributed geographically. If the answer is No. Then, our next question will be “is there sign of spatial clustering?”. And, if the answer for this question is yes, then our next question will be “where are these clusters?”
 
 In this case study, we are interested to examine the spatial pattern of a selected development indicator (i.e. GDP per capita) of Hunan Provice, People Republic of China.
 
-##9.2.2 The Study Area and Data
-Two data sets will be used in this hands-on exercise, they are:
+##9.2.2 The Study Area and Data Two data sets will be used in this hands-on exercise, they are:
 
-Hunan province administrative boundary layer at county level. This is a geospatial data set in ESRI shapefile format.
-Hunan_2012.csv: This csv file contains selected Hunan’s local development indicators in 2012.
-##9.2.3 Setting the Analytical Toolls
-Before we get started, we need to ensure that spdep, sf, tmap and tidyverse packages of R are currently installed in your R.
+Hunan province administrative boundary layer at county level. This is a geospatial data set in ESRI shapefile format. Hunan_2012.csv: This csv file contains selected Hunan’s local development indicators in 2012. ##9.2.3 Setting the Analytical Toolls Before we get started, we need to ensure that spdep, sf, tmap and tidyverse packages of R are currently installed in your R.
 
-sf is use for importing and handling geospatial data in R,
-tidyverse is mainly use for wrangling attribute data in R,
-spdep will be used to compute spatial weights, global and local spatial autocorrelation statistics, and
-tmap will be used to prepare cartographic quality chropleth map.
-The code chunk below is used to perform the following tasks:
+sf is use for importing and handling geospatial data in R, tidyverse is mainly use for wrangling attribute data in R, spdep will be used to compute spatial weights, global and local spatial autocorrelation statistics, and tmap will be used to prepare cartographic quality chropleth map. The code chunk below is used to perform the following tasks:
 
-creating a package list containing the necessary R packages,
-checking if the R packages in the package list have been installed in R,
-if they have yet to be installed, RStudio will installed the missing packages,
-launching the packages into R environment.
+creating a package list containing the necessary R packages, checking if the R packages in the package list have been installed in R, if they have yet to be installed, RStudio will installed the missing packages, launching the packages into R environment.
 
 ```{r}
 pacman::p_load(sf, spdep, tmap, tidyverse)
 ```
 
-#9.3 Getting the Data Into R Environment
-##9.3.1 Import shapefile into r environment
+#9.3 Getting the Data Into R Environment ##9.3.1 Import shapefile into r environment
+
 ```{r}
 hunan <- st_read(dsn = "data/geospatial", 
                  layer = "Hunan")
 ```
+
 ##9.3.2 Import csv file into r environment
+
 ```{r}
 hunan2012 <- read_csv("data/aspatial/Hunan_2012.csv")
 ```
 
 ##9.3.3 Performing relational join
+
 ```{r}
 hunan <- left_join(hunan,hunan2012) %>%
   select(1:4, 7, 15)
 ```
+
 ##9.3.4 Visualising Regional Development Indicator
+
 ```{r}
 equal <- tm_shape(hunan) +
   tm_fill("GDPPC",
@@ -88,29 +73,34 @@ tmap_arrange(equal,
              ncol=2)
 ```
 
-#9.4 Global Measures of Spatial Autocorrelation
-##9.4.1 Computing Contiguity Spatial Weights
+#9.4 Global Measures of Spatial Autocorrelation ##9.4.1 Computing Contiguity Spatial Weights
+
 ```{r}
 wm_q <- poly2nb(hunan, 
                 queen=TRUE)
 summary(wm_q)
 ```
+
 ##9.4.2 Row-standardised weights matrix
+
 ```{r}
 rswm_q <- nb2listw(wm_q, 
                    style="W", 
                    zero.policy = TRUE)
 rswm_q
 ```
-#9.5 Global Measures of Spatial Autocorrelation: Moran’s I
-##9.5.1 Maron’s I test
+
+#9.5 Global Measures of Spatial Autocorrelation: Moran’s I ##9.5.1 Maron’s I test
+
 ```{r}
 moran.test(hunan$GDPPC, 
            listw=rswm_q, 
            zero.policy = TRUE, 
            na.action=na.omit)
 ```
+
 ##9.5.2 Computing Monte Carlo Moran’s I
+
 ```{r}
 set.seed(1234)
 bperm= moran.mc(hunan$GDPPC, 
@@ -120,7 +110,9 @@ bperm= moran.mc(hunan$GDPPC,
                 na.action=na.omit)
 bperm
 ```
+
 ##9.5.3 Visualising Monte Carlo Moran’s I
+
 ```{r}
 mean(bperm$res[1:999])
 var(bperm$res[1:999])
@@ -132,12 +124,15 @@ hist(bperm$res,
 abline(v=0, 
        col="red") 
 ```
-#9.6 Global Measures of Spatial Autocorrelation: Geary’s C
-##9.6.1 Geary’s C test
+
+#9.6 Global Measures of Spatial Autocorrelation: Geary’s C ##9.6.1 Geary’s C test
+
 ```{r}
 geary.test(hunan$GDPPC, listw=rswm_q)
 ```
+
 ##9.6.2 Computing Monte Carlo Geary’s C
+
 ```{r}
 set.seed(1234)
 bperm=geary.mc(hunan$GDPPC, 
@@ -145,7 +140,9 @@ bperm=geary.mc(hunan$GDPPC,
                nsim=999)
 bperm
 ```
+
 ##9.6.3 Visualising the Monte Carlo Geary’s C
+
 ```{r}
 mean(bperm$res[1:999])
 var(bperm$res[1:999])
@@ -153,8 +150,9 @@ summary(bperm$res[1:999])
 hist(bperm$res, freq=TRUE, breaks=20, xlab="Simulated Geary c")
 abline(v=1, col="red") 
 ```
-#9.7 Spatial Correlogram
-##9.7.1 Compute Moran’s I correlogram
+
+#9.7 Spatial Correlogram ##9.7.1 Compute Moran’s I correlogram
+
 ```{r}
 MI_corr <- sp.correlogram(wm_q, 
                           hunan$GDPPC, 
@@ -165,6 +163,7 @@ plot(MI_corr)
 
 print(MI_corr)
 ```
+
 ##9.7.2 Compute Geary’s C correlogram and plot
 
 ```{r}
@@ -177,61 +176,51 @@ plot(GC_corr)
 
 print(GC_corr)
 ```
-#10  Local Measures of Spatial Autocorrelation
-#10.1 Overview
-Local Measures of Spatial Autocorrelation (LMSA) focus on the relationships between each observation and its surroundings, rather than providing a single summary of these relationships across the map. In this sense, they are not summary statistics but scores that allow us to learn more about the spatial structure in our data. The general intuition behind the metrics however is similar to that of global ones. Some of them are even mathematically connected, where the global version can be decomposed into a collection of local ones. One such example are Local Indicators of Spatial Association (LISA). Beside LISA, Getis-Ord’s Gi-statistics will be introduce as an alternative LMSA statistics that present complementary information or allow us to obtain similar insights for geographically referenced data.
+
+#10 Local Measures of Spatial Autocorrelation #10.1 Overview Local Measures of Spatial Autocorrelation (LMSA) focus on the relationships between each observation and its surroundings, rather than providing a single summary of these relationships across the map. In this sense, they are not summary statistics but scores that allow us to learn more about the spatial structure in our data. The general intuition behind the metrics however is similar to that of global ones. Some of them are even mathematically connected, where the global version can be decomposed into a collection of local ones. One such example are Local Indicators of Spatial Association (LISA). Beside LISA, Getis-Ord’s Gi-statistics will be introduce as an alternative LMSA statistics that present complementary information or allow us to obtain similar insights for geographically referenced data.
 
 In this hands-on exercise, you will learn how to compute Local Measures of Spatial Autocorrelation (LMSA) by using spdep package. By the end to this hands-on exercise, you will be able to:
 
-import geospatial data using appropriate function(s) of sf package,
-import csv file using appropriate function of readr package,
-perform relational join using appropriate join function of dplyr package,
-compute Local Indicator of Spatial Association (LISA) statistics for detecting clusters and outliers by using appropriate functions spdep package;
-compute Getis-Ord’s Gi-statistics for detecting hot spot or/and cold spot area by using appropriate functions of spdep package; and
-to visualise the analysis output by using tmap package.
+import geospatial data using appropriate function(s) of sf package, import csv file using appropriate function of readr package, perform relational join using appropriate join function of dplyr package, compute Local Indicator of Spatial Association (LISA) statistics for detecting clusters and outliers by using appropriate functions spdep package; compute Getis-Ord’s Gi-statistics for detecting hot spot or/and cold spot area by using appropriate functions of spdep package; and to visualise the analysis output by using tmap package.
 
-#10.2 Getting Started
-##10.2.1 The analytical question
-In spatial policy, one of the main development objective of the local govenment and planners is to ensure equal distribution of development in the province. Our task in this study, hence, is to apply appropriate spatial statistical methods to discover if development are even distributed geographically. If the answer is No. Then, our next question will be “is there sign of spatial clustering?”. And, if the answer for this question is yes, then our next question will be “where are these clusters?”
+#10.2 Getting Started ##10.2.1 The analytical question In spatial policy, one of the main development objective of the local govenment and planners is to ensure equal distribution of development in the province. Our task in this study, hence, is to apply appropriate spatial statistical methods to discover if development are even distributed geographically. If the answer is No. Then, our next question will be “is there sign of spatial clustering?”. And, if the answer for this question is yes, then our next question will be “where are these clusters?”
 
 In this case study, we are interested to examine the spatial pattern of a selected development indicator (i.e. GDP per capita) of Hunan Provice, People Republic of China.(https://en.wikipedia.org/wiki/Hunan)
 
-##10.2.2 The Study Area and Data
-Two data sets will be used in this hands-on exercise, they are:
+##10.2.2 The Study Area and Data Two data sets will be used in this hands-on exercise, they are:
 
-Hunan province administrative boundary layer at county level. This is a geospatial data set in ESRI shapefile format.
-Hunan_2012.csv: This csv file contains selected Hunan’s local development indicators in 2012.
+Hunan province administrative boundary layer at county level. This is a geospatial data set in ESRI shapefile format. Hunan_2012.csv: This csv file contains selected Hunan’s local development indicators in 2012.
 
-##10.2.3 Setting the Analytical Toolls
-Before we get started, we need to ensure that spdep, sf, tmap and tidyverse packages of R are currently installed in your R.
+##10.2.3 Setting the Analytical Toolls Before we get started, we need to ensure that spdep, sf, tmap and tidyverse packages of R are currently installed in your R.
 
-sf is use for importing and handling geospatial data in R,
-tidyverse is mainly use for wrangling attribute data in R,
-spdep will be used to compute spatial weights, global and local spatial autocorrelation statistics, and
-tmap will be used to prepare cartographic quality chropleth map.
+sf is use for importing and handling geospatial data in R, tidyverse is mainly use for wrangling attribute data in R, spdep will be used to compute spatial weights, global and local spatial autocorrelation statistics, and tmap will be used to prepare cartographic quality chropleth map.
 
 ```{r}
 pacman::p_load(sf, spdep, tmap, tidyverse)
 ```
 
-#10.3 Getting the Data Into R Environment
-##10.3.1 Import shapefile into r environment
+#10.3 Getting the Data Into R Environment ##10.3.1 Import shapefile into r environment
+
 ```{r}
 hunan <- st_read(dsn = "data/geospatial", 
                  layer = "Hunan")
 ```
+
 ##10.3.2 Import csv file into r environment
+
 ```{r}
 hunan2012 <- read_csv("data/aspatial/Hunan_2012.csv")
 ```
 
 ##10.3.3 Performing relational join
+
 ```{r}
 hunan <- left_join(hunan,hunan2012) %>%
   select(1:4, 7, 15)
 ```
 
 ##10.3.4 Visualising Regional Development Indicator
+
 ```{r}
 equal <- tm_shape(hunan) +
   tm_fill("GDPPC",
@@ -253,10 +242,10 @@ tmap_arrange(equal,
              ncol=2)
 ```
 
-#10.4 Local Indicators of Spatial Association(LISA)
-Local Indicators of Spatial Association or LISA are statistics that evaluate the existence of clusters and/or outliers in the spatial arrangement of a given variable. For instance if we are studying distribution of GDP per capita of Hunan Provice, People Republic of China, local clusters in GDP per capita mean that there are counties that have higher or lower rates than is to be expected by chance alone; that is, the values occurring are above or below those of a random distribution in space.
+#10.4 Local Indicators of Spatial Association(LISA) Local Indicators of Spatial Association or LISA are statistics that evaluate the existence of clusters and/or outliers in the spatial arrangement of a given variable. For instance if we are studying distribution of GDP per capita of Hunan Provice, People Republic of China, local clusters in GDP per capita mean that there are counties that have higher or lower rates than is to be expected by chance alone; that is, the values occurring are above or below those of a random distribution in space.
 
 ##10.4.1 Computing Contiguity Spatial Weights
+
 ```{r}
 wm_q <- poly2nb(hunan, 
                 queen=TRUE)
@@ -264,6 +253,7 @@ summary(wm_q)
 ```
 
 ##10.4.2 Row-standardised weights matrix
+
 ```{r}
 rswm_q <- nb2listw(wm_q, 
                    style="W", 
@@ -272,6 +262,7 @@ rswm_q
 ```
 
 ##10.4.3 Computing local Moran’s I
+
 ```{r}
 fips <- order(hunan$County)
 localMI <- localmoran(hunan$GDPPC, rswm_q)
@@ -282,13 +273,16 @@ printCoefmat(data.frame(
   row.names=hunan$County[fips]),
   check.names=FALSE)
 ```
+
 ###10.4.3.1 Mapping the local Moran’s I
+
 ```{r}
 hunan.localMI <- cbind(hunan,localMI) %>%
   rename(Pr.Ii = Pr.z....E.Ii..)
 ```
 
 ###10.4.3.2 Mapping local Moran’s I values
+
 ```{r}
 tm_shape(hunan.localMI) +
   tm_fill(col = "Ii", 
@@ -297,7 +291,9 @@ tm_shape(hunan.localMI) +
           title = "local moran statistics") +
   tm_borders(alpha = 0.5)
 ```
+
 ###10.4.3.3 Mapping local Moran’s I p-values
+
 ```{r}
 tm_shape(hunan.localMI) +
   tm_fill(col = "Pr.Ii", 
@@ -306,7 +302,9 @@ tm_shape(hunan.localMI) +
           title = "local Moran's I p-values") +
   tm_borders(alpha = 0.5)
 ```
+
 ###10.4.3.4 Mapping both local Moran’s I values and p-values
+
 ```{r}
 localMI.map <- tm_shape(hunan.localMI) +
   tm_fill(col = "Ii", 
@@ -324,15 +322,17 @@ pvalue.map <- tm_shape(hunan.localMI) +
 tmap_arrange(localMI.map, pvalue.map, asp=1, ncol=2)
 ```
 
-#10.5 Creating a LISA Cluster Map
-##10.5.1 Plotting Moran scatterplot
+#10.5 Creating a LISA Cluster Map ##10.5.1 Plotting Moran scatterplot
+
 ```{r}
 nci <- moran.plot(hunan$GDPPC, rswm_q,
                   labels=as.character(hunan$County), 
                   xlab="GDPPC 2012", 
                   ylab="Spatially Lag GDPPC 2012")
 ```
+
 ##10.5.2 Plotting Moran scatterplot with standardised variable
+
 ```{r}
 hunan$Z.GDPPC <- scale(hunan$GDPPC) %>% 
   as.vector 
@@ -341,7 +341,9 @@ nci2 <- moran.plot(hunan$Z.GDPPC, rswm_q,
                    xlab="z-GDPPC 2012", 
                    ylab="Spatially Lag z-GDPPC 2012")
 ```
+
 ##10.5.3 Preparing LISA map classes
+
 ```{r}
 quadrant <- vector(mode="numeric",length=nrow(localMI))
 
@@ -369,7 +371,9 @@ quadrant[DV <0 & LM_I<0] <- 3
 quadrant[DV >0 & LM_I>0] <- 4    
 quadrant[localMI[,5]>signif] <- 0
 ```
+
 ##10.5.4 Plotting LISA map
+
 ```{r}
 
 hunan.localMI$quadrant <- quadrant
@@ -388,6 +392,7 @@ tm_shape(hunan.localMI) +
 
 gdppc <- qtm(hunan, "GDPPC")
 ```
+
 ```{r}
 hunan.localMI$quadrant <- quadrant
 colors <- c("#ffffff", "#2c7bb6", "#abd9e9", "#fdae61", "#d7191c")
@@ -405,31 +410,32 @@ LISAmap <- tm_shape(hunan.localMI) +
 tmap_arrange(gdppc, LISAmap, 
              asp=1, ncol=2)
 ```
-#10.6 Hot Spot and Cold Spot Area Analysis
-##10.6.1 Getis and Ord’s G-Statistics
-An alternative spatial statistics to detect spatial anomalies is the Getis and Ord’s G-statistics (Getis and Ord, 1972; Ord and Getis, 1995). It looks at neighbours within a defined proximity to identify where either high or low values clutser spatially. Here, statistically significant hot-spots are recognised as areas of high values where other areas within a neighbourhood range also share high values too.
+
+#10.6 Hot Spot and Cold Spot Area Analysis ##10.6.1 Getis and Ord’s G-Statistics An alternative spatial statistics to detect spatial anomalies is the Getis and Ord’s G-statistics (Getis and Ord, 1972; Ord and Getis, 1995). It looks at neighbours within a defined proximity to identify where either high or low values clutser spatially. Here, statistically significant hot-spots are recognised as areas of high values where other areas within a neighbourhood range also share high values too.
 
 The analysis consists of three steps:
 
-Deriving spatial weight matrix
-Computing Gi statistics
-Mapping Gi statistics
+Deriving spatial weight matrix Computing Gi statistics Mapping Gi statistics
 
-##10.6.2 Deriving distance-based weight matrix
-###10.6.2.1 Deriving the centroid
+##10.6.2 Deriving distance-based weight matrix ###10.6.2.1 Deriving the centroid
+
 ```{r}
 longitude <- map_dbl(hunan$geometry, ~st_centroid(.x)[[1]])
 latitude <- map_dbl(hunan$geometry, ~st_centroid(.x)[[2]])
 coords <- cbind(longitude, latitude)
 ```
+
 ###10.6.2.2 Determine the cut-off distance
+
 ```{r}
 #coords <- coordinates(hunan)
 k1 <- knn2nb(knearneigh(coords))
 k1dists <- unlist(nbdists(k1, coords, longlat = TRUE))
 summary(k1dists)
 ```
+
 ###10.6.2.3 Computing fixed distance weight matrix
+
 ```{r}
 wm_d62 <- dnearneigh(coords, 0, 62, longlat = TRUE)
 wm_d62
@@ -437,7 +443,9 @@ wm_d62
 wm62_lw <- nb2listw(wm_d62, style = 'B')
 summary(wm62_lw)
 ```
+
 ##10.6.3 Computing adaptive distance weight matrix
+
 ```{r}
 knn <- knn2nb(knearneigh(coords, k=8))
 knn
@@ -447,8 +455,8 @@ knn_lw <- nb2listw(knn, style = 'B')
 summary(knn_lw)
 ```
 
-##10.7 Computing Gi statistics
-###10.7.1 Gi statistics using fixed distance
+##10.7 Computing Gi statistics ###10.7.1 Gi statistics using fixed distance
+
 ```{r}
 fips <- order(hunan$County)
 gi.fixed <- localG(hunan$GDPPC, wm62_lw)
@@ -459,6 +467,7 @@ hunan.gi <- cbind(hunan, as.matrix(gi.fixed)) %>%
 ```
 
 ###10.7.2 Mapping Gi values with fixed distance weights
+
 ```{r}
 gdppc <- qtm(hunan, "GDPPC")
 
@@ -471,14 +480,18 @@ Gimap <-tm_shape(hunan.gi) +
 
 tmap_arrange(gdppc, Gimap, asp=1, ncol=2)
 ```
+
 ###10.7.3 Gi statistics using adaptive distance
+
 ```{r}
 fips <- order(hunan$County)
 gi.adaptive <- localG(hunan$GDPPC, knn_lw)
 hunan.gi <- cbind(hunan, as.matrix(gi.adaptive)) %>%
   rename(gstat_adaptive = as.matrix.gi.adaptive.)
 ```
+
 ###10.7.4 Mapping Gi values with adaptive distance weights
+
 ```{r}
 gdppc<- qtm(hunan, "GDPPC")
 
@@ -494,13 +507,3 @@ tmap_arrange(gdppc,
              asp=1, 
              ncol=2)
 ```
-
-
-
-
-
-
-
-
-
-
