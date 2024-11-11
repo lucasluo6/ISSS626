@@ -35,7 +35,7 @@ The goals of this exercise are to:
 In this exercise, we will use the following packages:
 
 | Package       | Description                                                                                                                                                                                        |
-|-------------|-----------------------------------------------------------|
+|----------------|--------------------------------------------------------|
 | **sf**        | Provides functions for reading, processing, and visualizing spatial data in the "Simple Features" format, enabling spatial data handling in R.                                                     |
 | **spdep**     | Provides tools for spatial dependency modeling, including spatial weights and measures for spatial autocorrelation, such as Moran's I, useful for detecting spatial patterns.                      |
 | **tidyverse** | A suite of R packages designed for data manipulation (`dplyr`, `tidyr`), visualization (`ggplot2`), and other common data science tasks, improving data handling and analysis.                     |
@@ -90,14 +90,11 @@ Clinics <- st_read("data/geospatial/CHASClinics.geojson") %>%
 supermarkets <- st_read("data/geospatial/SupermarketsGEOJSON.geojson") %>%
   st_transform(crs = 3414)
 ```
+
 ```{r}
 schoolzone <- st_read("data/geospatial/LTASchoolZone.geojson") %>%
   st_transform(crs = 3414)
 ```
-
-
-
-
 
 ```{r}
 resale <- read_csv("data/aspatial/resale.csv") %>%
@@ -302,6 +299,7 @@ These multiple variable distribution plots allow us to better understand the ran
 
 By visualizing the spatial distribution of HDB resale prices, we can observe price differences across regions and identify potential spatial clustering patterns.
 
+````{=html}
 <!--```{r}
 # Visualizing the geographical distribution of resale prices with tmap
 tmap_mode("view")
@@ -311,6 +309,7 @@ tm_shape(mpsz_svy21) +
   tm_dots(col = "resale_price", alpha = 0.6, style = "quantile", title = "Resale Price") +
   tm_view(set.zoom.limits = c(11, 14))
 ```-->
+````
 
 This map shows the spatial distribution of HDB resale prices, helping identify regions with high and low resale prices.
 
@@ -329,7 +328,3 @@ ggplot(data=resale_geo, aes(x=floor_area_sqm, y=resale_price)) +
 ### 5.6 Correlation Matrix of Features
 
 By visualizing a correlation matrix heatmap, we can identify highly correlated features, which may help in feature selection for subsequent modeling.
-
-
-
-
