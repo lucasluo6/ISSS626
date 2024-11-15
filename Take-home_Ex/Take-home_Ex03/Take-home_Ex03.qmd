@@ -6,8 +6,12 @@ date-modified: "last-modified"
 execute: 
   eval: true
   echo: true
-  message: false
+  warning: false
   freeze: true
+  cache: TRUE
+format: 
+  html:
+    code-fold: true
 ---
 
 ------------------------------------------------------------------------
@@ -35,7 +39,7 @@ The goals of this exercise are to:
 In this exercise, we will use the following packages:
 
 | Package       | Description                                                                                                                                                                                        |
-|-----------------------|------------------------------------------------|
+|-------------------------|-----------------------------------------------|
 | **sf**        | Provides functions for reading, processing, and visualizing spatial data in the "Simple Features" format, enabling spatial data handling in R.                                                     |
 | **spdep**     | Provides tools for spatial dependency modeling, including spatial weights and measures for spatial autocorrelation, such as Moran's I, useful for detecting spatial patterns.                      |
 | **tidyverse** | A suite of R packages designed for data manipulation (`dplyr`, `tidyr`), visualization (`ggplot2`), and other common data science tasks, improving data handling and analysis.                     |
@@ -54,7 +58,7 @@ pacman::p_load(tidyverse, sf, spdep, GWmodel, tmap, caret, ranger, httr, jsonlit
 ### 3.2 The Data
 
 | Dataset Name                 | Description                                                                                                                                      | Format    | Source                             |
-|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|-----------|------------------------------------|
+|---------------|-----------------------------|---------------|---------------|
 | **Master Plan 2019 Subzone** | Geospatial data representing the boundaries of different regions in Singapore.                                                                   | Shapefile | Singapore Land Authority           |
 | **HDB Resale Transactions**  | Aspatial data containing information on HDB resale prices, house type and location.                                                              | CSV       | Singapore Open Data Portal         |
 | **Various Facilities Data**  | Includes data on the location of elderly care centres, supermarkets, hawker centres, parks, etc. for analysing the impact of proximity on price. | GeoJSON   | Various open sources in Singapore  |
@@ -81,8 +85,9 @@ train_stations <- st_read(dsn = "data/geospatial", layer = "RapidTransitSystemSt
   st_transform(crs = 3414) %>%
   filter(grepl("STATION|MRT", STN_NAM_DE))
 ```
-::: panel-tabset
-**Note:** This step filters the train station dataset to retain only actual station locations, removing entries such as depots or non-station facilities. We use `grepl("STATION|MRT", STN_NAM_DE)` to select records where `STN_NAM_DE` contains "STATION"or"MRT", ensuring that only transit stations are included for accurate spatial analysis.
+
+::: callout-note
+This step filters the train station dataset to retain only actual station locations, removing entries such as depots or non-station facilities. We use `grepl("STATION|MRT", STN_NAM_DE)` to select records where `STN_NAM_DE` contains "STATION"or"MRT", ensuring that only transit stations are included for accurate spatial analysis.
 :::
 
 ```{r}
@@ -112,7 +117,7 @@ resale <- read_csv("data/aspatial/resale.csv") %>%
   filter(month >= "2023-01" & month <= "2024-09")
 ```
 
-::: panel-tabset
+::: callout-note
 Note loads the resale data and filters it to only include transactions from January 2023 to September 2024. glimpse() provides an overview of the data structure and variables.
 :::
 
@@ -198,6 +203,7 @@ schoolzone<- st_zm(schoolzone)
 ```
 
 ### 4.3 Duel with invalid geometries
+
 ```{r}
 # Check for invalid geometries
 datasets <- list(mpsz = mpsz, bus_stops = bus_stops, train_stations = train_stations, 
@@ -233,7 +239,7 @@ resale_tidy <- resale %>%
     str_sub(remaining_lease, 9, 11)))
 ```
 
-::: panel-tabset
+::: callout-note
 Note This transformation combines block and street name into a single address field and extracts remaining_lease_yr and remaining_lease_mth for further analysis.
 :::
 
@@ -246,16 +252,17 @@ resale_selected <- resale_tidy %>%
 add_list <- sort(unique(resale_selected$address))
 ```
 
-::: panel-tabset
+::: callout-note
 Note filters the dataset to only include September 2024 transactions and extracts unique addresses to be geocoded.
 :::
 
 ### 4.5 Saving the Geocoded Coordinates
+
 ```{r}
 coords <- get_coords(add_list)
 ```
 
-::: panel-tabset
+::: callout-note
 Note This function get_coords uses the OneMap API to retrieve coordinates (latitude and longitude) for each unique address in add_list. It handles cases where multiple or no results are returned for an address.
 :::
 
@@ -263,7 +270,7 @@ Note This function get_coords uses the OneMap API to retrieve coordinates (latit
 write_rds(coords, "data/rds/coords.rds")
 ```
 
-::: panel-tabset
+::: callout-note
 Note The geocoded coordinates are saved to an RDS file to avoid re-running the API calls, making future analyses more efficient.
 :::
 
@@ -279,11 +286,12 @@ resale_geo <- resale_selected %>%
 
 ```
 
-::: panel-tabset
+::: callout-note
 Note This code joins the geocoded coordinates with the filtered resale data, creating a geospatial dataset with latitude and longitude fields for further spatial analysis.
 :::
 
 ### 4.7 Data Data Visualization
+
 ```{r}
 # Enable automatic fixing of invalid polygons
 tmap_options(check.and.fix = TRUE)
@@ -316,20 +324,21 @@ tm_shape(mpsz) +
   
   tm_layout(title = "Interactive Map of Amenities in Singapore")
 ```
-::: panel-tabset
-**Note:** This visualization displays various amenities across Singapore, including healthcare facilities, childcare centers, eldercare centers, public transit stations, parks, and retail stores. Each type of location is represented with a unique color and symbol to make it easy to distinguish. This map can help analyze the spatial distribution of these amenities and their accessibility to different residential areas.
+
+::: callout-note
+This visualization displays various amenities across Singapore, including healthcare facilities, childcare centers, eldercare centers, public transit stations, parks, and retail stores. Each type of location is represented with a unique color and symbol to make it easy to distinguish. This map can help analyze the spatial distribution of these amenities and their accessibility to different residential areas.
 :::
+
 #### 4.7.1 Filtering Data to Singapore Boundaries
 
-::: panel-tabset
 Note Some bus stops were located outside Singapore's boundary in the initial visualization. To ensure that only relevant data within Singapore is included, we filter the `bus_stops` dataset to retain only those points that fall within the geographical boundaries defined by the `mpsz` dataset. We achieve this by performing a spatial intersection between the bus stop points and the Singapore boundary (mpsz). This will help create a more accurate visualization that excludes any extraneous data outside Singapore.
-:::
 
 ```{r}
 # Ensure bus_stops are within the mpsz boundary
 bus_stops <- st_intersection(bus_stops, mpsz)
 clinics <- st_intersection(clinics, mpsz)
 ```
+
 ```{r}
 # Visualize the filtered data to confirm that all amenities are within Singapore
 tmap_mode("view")
@@ -351,27 +360,30 @@ tm_shape(mpsz) +
   tm_layout(title = "Filtered Interactive Map of Amenities in Singapore")
 ```
 
+## 5. Data Wrangling
 
-## 5.  Data Wrangling
 ### 5.1. Structural Factors
+
 Flat Type:
+
 ```{r}
 # Filter `resale_geo` into separate data frames based on flat type
 resale_geo_3room <- resale_geo %>% filter(flat_type == "3 ROOM")
 resale_geo_4room <- resale_geo %>% filter(flat_type == "4 ROOM")
 resale_geo_5room <- resale_geo %>% filter(flat_type == "5 ROOM")
 ```
-Area of the Unit:
-Check if you have a floor_area_sqm column.
+
+Area of the Unit: Check if you have a floor_area_sqm column.
+
 ```{r}
 # Convert area to numeric if necessary and handle missing values
 resale_geo_4room <- resale_geo_4room %>%
   mutate(floor_area_sqm = as.numeric(floor_area_sqm)) %>%
   drop_na(floor_area_sqm)
 ```
-Floor Level:
-If floor information is represented in ranges (e.g., "01 TO 03"), convert it to an approximate floor level (e.g., the median floor of the range).
-Create a new column, floor_level, to store the converted floor level.
+
+Floor Level: If floor information is represented in ranges (e.g., "01 TO 03"), convert it to an approximate floor level (e.g., the median floor of the range). Create a new column, floor_level, to store the converted floor level.
+
 ```{r}
 # Convert `storey_range` to approximate floor level
 resale_geo_4room  <- resale_geo_4room  %>%
@@ -380,6 +392,7 @@ resale_geo_4room  <- resale_geo_4room  %>%
 ```
 
 Age of the Unit:
+
 ```{r}
 # Calculate age of the unit
 current_year <- as.numeric(format(Sys.Date(), "%Y"))
@@ -390,8 +403,8 @@ resale_geo_4room <- resale_geo_4room %>%
 
 ### 5.2 Locational Factors
 
-Proximity to Key Amenities
-Calculate the distance from each HDB flat to various key amenities like MRT, parks, and shopping malls. Use st_distance to find the nearest amenity in each category.
+Proximity to Key Amenities Calculate the distance from each HDB flat to various key amenities like MRT, parks, and shopping malls. Use st_distance to find the nearest amenity in each category.
+
 ```{r}
 # Function to calculate proximity to the nearest amenity with units in meters
 calculate_nearest <- function(resale_data, amenity_data, amenity_name) {
@@ -413,11 +426,8 @@ resale_geo_4room <- calculate_nearest(resale_geo_4room, bus_stops, "dist_to_bus"
 resale_geo_4room <- calculate_nearest(resale_geo_4room, supermarkets, "dist_to_supermarket")
 ```
 
+Count of Facilities within Radius Use the calculate_amenity_count function to calculate the number of facilities within a specific radius of each flat. For each amenity type, specify a radius and create a new column indicating the count of nearby facilities.
 
-
-Count of Facilities within Radius
-Use the calculate_amenity_count function to calculate the number of facilities within a specific radius of each flat.
-For each amenity type, specify a radius and create a new column indicating the count of nearby facilities.
 ```{r}
 # Function to calculate the count of amenities within a specified radius
 calculate_amenity_count <- function(resale_data, amenity_data, radius, amenity_name) {
@@ -442,7 +452,9 @@ resale_geo_4room<- calculate_amenity_count(resale_geo_4room, schoolzone, 300, "s
 
 
 ```
+
 Filtering out unnecessary columns and saving the final dataset to a file is a good practice. This will help streamline analysis and avoid redundant calculations.
+
 ```{r}
 # Rename columns for resale_geo_4room (similar steps can be applied to other datasets)
 resale_new_4room <- resale_geo_4room %>%
@@ -481,21 +493,14 @@ ggplot(data = resale_new_4room, aes(x = RESALE_PRICE)) +
   labs(title = "Distribution of HDB Resale Prices", x = "Resale Price", y = "Frequency")
 ```
 
-::: panel-tabset
-Prominent Peak in Mid-Range Prices:
-The highest concentration of resale transactions occurs between SGD 450,000 and SGD 600,000, with the peak frequency around SGD 500,000.
-This suggests that mid-range flats are most common and potentially more accessible to buyers.
+::: callout-note
+Prominent Peak in Mid-Range Prices: The highest concentration of resale transactions occurs between SGD 450,000 and SGD 600,000, with the peak frequency around SGD 500,000. This suggests that mid-range flats are most common and potentially more accessible to buyers.
 
-Reduced High-End Sales:
-There are fewer transactions as prices increase beyond SGD 700,000, with even fewer above SGD 1 million.
-These higher resale prices likely correspond to larger or newer flats, or flats in more premium locations.
+Reduced High-End Sales: There are fewer transactions as prices increase beyond SGD 700,000, with even fewer above SGD 1 million. These higher resale prices likely correspond to larger or newer flats, or flats in more premium locations.
 
-Absence of Very Low-End Sales:
-The distribution has a minimum threshold close to SGD 300,000, which might indicate a baseline resale price in the market. This likely reflects minimum price points for 3-room or 4-room flats with fewer amenities or in less central locations.
+Absence of Very Low-End Sales: The distribution has a minimum threshold close to SGD 300,000, which might indicate a baseline resale price in the market. This likely reflects minimum price points for 3-room or 4-room flats with fewer amenities or in less central locations.
 
-Slight Right Skew:
-Although the majority of transactions are clustered in the middle range, the histogram has a slight right skew due to the long tail extending towards higher prices.
-This skew reflects that while most flats fall within a certain price range, a small percentage of flats sell at higher price points due to factors such as location, size, or recent upgrades.
+Slight Right Skew: Although the majority of transactions are clustered in the middle range, the histogram has a slight right skew due to the long tail extending towards higher prices. This skew reflects that while most flats fall within a certain price range, a small percentage of flats sell at higher price points due to factors such as location, size, or recent upgrades.
 :::
 
 ```{r}
@@ -506,18 +511,15 @@ tm_shape(resale_new_4room) +
           alpha = 0.6,
           style="quantile")
 ```
-::: panel-tabset
-Geographic Distribution of Resale Prices:
-Higher Prices (Darker Colors): Higher-priced resale flats (740,000 to 1,408,000 SGD) are more concentrated in central regions and areas near the Central Business District (CBD) and popular residential districts. This suggests that location significantly influences resale value, especially proximity to city center and high-demand neighborhoods.
-Lower Prices (Lighter Colors): Lower-priced flats (355,000 to 530,000 SGD) are more prevalent in peripheral areas like the northern and western parts of Singapore. These regions may be further from the CBD, major transport hubs, or amenities that add value.
 
-Concentration Patterns:
-Areas with a dense clustering of resale flats (e.g., in the central and northeastern regions) suggest neighborhoods with a high number of transactions. These areas are likely popular for buyers, possibly due to access to amenities such as MRT stations, malls, and schools.
-In contrast, sparser distributions in northern and eastern areas indicate fewer resale transactions or lower demand, potentially due to fewer amenities or more remote locations.
+::: callout-note
+Geographic Distribution of Resale Prices: Higher Prices (Darker Colors): Higher-priced resale flats (740,000 to 1,408,000 SGD) are more concentrated in central regions and areas near the Central Business District (CBD) and popular residential districts. This suggests that location significantly influences resale value, especially proximity to city center and high-demand neighborhoods. Lower Prices (Lighter Colors): Lower-priced flats (355,000 to 530,000 SGD) are more prevalent in peripheral areas like the northern and western parts of Singapore. These regions may be further from the CBD, major transport hubs, or amenities that add value.
+
+Concentration Patterns: Areas with a dense clustering of resale flats (e.g., in the central and northeastern regions) suggest neighborhoods with a high number of transactions. These areas are likely popular for buyers, possibly due to access to amenities such as MRT stations, malls, and schools. In contrast, sparser distributions in northern and eastern areas indicate fewer resale transactions or lower demand, potentially due to fewer amenities or more remote locations.
 :::
 
-
 ### 6.2 Price Trends by Flat Type and Flat Model
+
 Analyze differences in prices by flat_type and flat_model to see if specific types or models command higher prices.
 
 ```{r}
@@ -528,24 +530,23 @@ ggplot(resale_new_4room, aes(x = FLAT_MODEL, y = RESALE_PRICE, fill = FLAT_MODEL
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-::: panel-tabset
+
+::: callout-note
 This boxplot visualizes the distribution of resale prices across different flat models. The results indicate significant variation in resale prices based on the flat model, suggesting that certain models are associated with higher or lower market values.
 
 Key Observations:
 
 DBSS and Type S1 Models:
 
-These two models command the highest resale prices, with DBSS flats typically selling around 900,000 SGD, and Type S1 flats reaching around 1.2 million SGD. This reflects the premium nature and potential desirability of these models.
-Model A and Premium Apartment Models:
+These two models command the highest resale prices, with DBSS flats typically selling around 900,000 SGD, and Type S1 flats reaching around 1.2 million SGD. This reflects the premium nature and potential desirability of these models. Model A and Premium Apartment Models:
 
-Model A and Premium Apartment flats generally show a higher median resale price compared to other models (excluding DBSS and Type S1). Model A has a wider range in resale prices, indicating variability within this model type.
-Standard, New Generation, and Simplified Models:
+Model A and Premium Apartment flats generally show a higher median resale price compared to other models (excluding DBSS and Type S1). Model A has a wider range in resale prices, indicating variability within this model type. Standard, New Generation, and Simplified Models:
 
-These models generally have lower resale prices, with medians around 400,000-500,000 SGD. They exhibit less variation, suggesting consistent valuation for these standard models.
-Improved and Model A2 Models:
+These models generally have lower resale prices, with medians around 400,000-500,000 SGD. They exhibit less variation, suggesting consistent valuation for these standard models. Improved and Model A2 Models:
 
 These two models have median resale prices in the mid-range, around 600,000-700,000 SGD. This may indicate moderate demand or favorable characteristics for some buyers.
 :::
+
 ### 6.3 Exploring Structural Factors
 
 Investigate structural factors such as floor area, age, remaining lease, and floor level to see how they correlate with resale price.
@@ -569,11 +570,13 @@ ggplot(resale_new_4room, aes(x = FLOOR_LEVEL, y = RESALE_PRICE)) +
   labs(title = "Resale Price vs Age of Flat", x = "Age of Flat (years)", y = "Resale Price") +
   theme_minimal()
 ```
-::: panel-tabset
+
+::: callout-note
 The analysis of resale prices reveals that both floor area and the age of flats are significant factors influencing their resale values. There is a clear positive relationship between floor area and resale price, with larger units generally commanding higher prices, indicating that size is an important determinant for buyers. Conversely, a negative trend is observed between the age of a flat and its resale price; older flats tend to have lower resale values compared to newer ones. This could be due to factors like shorter remaining leases and potentially outdated designs in older flats. Overall, the results suggest that HDB buyers prioritize larger and newer properties, likely for the added space, updated amenities, and longer lease periods.
 :::
 
 ### 6.4 Scatter Plots of Resale Price vs. Distance to Amenities
+
 ```{r}
 # Scatter plot for Resale Price vs Distance to MRT
 ggplot(resale_new_4room, aes(x = PROX_MRT, y = RESALE_PRICE)) +
@@ -598,18 +601,16 @@ ggplot(resale_new_4room, aes(x = PROX_SUPERMARKET, y = RESALE_PRICE)) +
 
 ```
 
-::: panel-tabset
-Resale Price vs. Distance to MRT:
-The plot shows a trend where resale prices generally decrease as the distance from MRT stations increases, especially within the first 500 meters. This suggests that closer proximity to MRT stations is valued by buyers, likely due to the convenience of public transportation.
+::: callout-note
+Resale Price vs. Distance to MRT: The plot shows a trend where resale prices generally decrease as the distance from MRT stations increases, especially within the first 500 meters. This suggests that closer proximity to MRT stations is valued by buyers, likely due to the convenience of public transportation.
 
-Resale Price vs. Distance to Bus Stops:
-The relationship between resale price and distance to bus stops is less pronounced than that of MRT stations. There is a slight concentration of higher resale prices closer to bus stops, particularly within the first 100 meters, but the trend is not as strong. This may indicate that while proximity to bus stops adds some value, it is less influential than proximity to MRT stations.
+Resale Price vs. Distance to Bus Stops: The relationship between resale price and distance to bus stops is less pronounced than that of MRT stations. There is a slight concentration of higher resale prices closer to bus stops, particularly within the first 100 meters, but the trend is not as strong. This may indicate that while proximity to bus stops adds some value, it is less influential than proximity to MRT stations.
 
-Resale Price vs. Distance to Supermarkets:
-Similar to MRT stations, there is a tendency for resale prices to be higher when closer to supermarkets, though this trend is moderate. Convenience to nearby supermarkets appears to be an attractive factor for buyers, possibly reflecting the importance of accessibility to daily necessities.
+Resale Price vs. Distance to Supermarkets: Similar to MRT stations, there is a tendency for resale prices to be higher when closer to supermarkets, though this trend is moderate. Convenience to nearby supermarkets appears to be an attractive factor for buyers, possibly reflecting the importance of accessibility to daily necessities.
 :::
 
- ### 6.5 Count of Amenities within Radius
+\### 6.5 Count of Amenities within Radius
+
 ```{r}
 # Scatter plot for Resale Price vs Count of Nearby Clinics
 ggplot(resale_new_4room, aes(x = count_clinics, y = RESALE_PRICE)) +
@@ -632,17 +633,14 @@ ggplot(resale_new_4room, aes(x = count_schoolzone, y = RESALE_PRICE)) +
        x = "Count of Nearby School zone", y = "Resale Price") +
   theme_minimal()
 ```
-::: panel-tabset
-Resale Price vs. Number of Nearby Clinics:
-The scatter plot shows a slight trend where having a higher number of nearby clinics is associated with somewhat higher resale prices, although the effect is modest. Properties located near a moderate number of clinics (5-10 clinics) tend to have a higher frequency of mid-to-high resale prices. This suggests that access to healthcare facilities is valued by some buyers but may not be a dominant factor in driving resale prices.
 
-Resale Price vs. Number of Nearby Hawker Centers：
-There is a noticeable clustering of properties around the 0 to 1 nearby hawker centers, with relatively higher resale prices for those with 1-2 hawker centers nearby. This distribution implies that the presence of hawker centers, which offer affordable food options, may slightly enhance the resale price, likely due to the convenience and lifestyle benefits they provide.
+::: callout-note
+Resale Price vs. Number of Nearby Clinics: The scatter plot shows a slight trend where having a higher number of nearby clinics is associated with somewhat higher resale prices, although the effect is modest. Properties located near a moderate number of clinics (5-10 clinics) tend to have a higher frequency of mid-to-high resale prices. This suggests that access to healthcare facilities is valued by some buyers but may not be a dominant factor in driving resale prices.
 
-Resale Price vs. Number of Nearby School Zones:
-The plot indicates that properties with 1 or 2 nearby school zones have a broader range of resale prices, with some reaching higher price points. This trend suggests that proximity to schools may be appealing to families, thereby adding value to properties in school-dense areas. However, beyond 2 school zones, the resale price effect appears minimal, likely because additional nearby schools do not further increase perceived convenience.
+Resale Price vs. Number of Nearby Hawker Centers： There is a noticeable clustering of properties around the 0 to 1 nearby hawker centers, with relatively higher resale prices for those with 1-2 hawker centers nearby. This distribution implies that the presence of hawker centers, which offer affordable food options, may slightly enhance the resale price, likely due to the convenience and lifestyle benefits they provide.
+
+Resale Price vs. Number of Nearby School Zones: The plot indicates that properties with 1 or 2 nearby school zones have a broader range of resale prices, with some reaching higher price points. This trend suggests that proximity to schools may be appealing to families, thereby adding value to properties in school-dense areas. However, beyond 2 school zones, the resale price effect appears minimal, likely because additional nearby schools do not further increase perceived convenience.
 :::
-
 
 ### 6.5Correlation Analysis
 
@@ -653,22 +651,21 @@ resale_new_4room_nogeo <- resale_new_4room %>%
   st_drop_geometry()
 ggcorrmat(resale_new_4room_nogeo, names(resale_new_4room_nogeo))
 ```
-::: panel-tabset
-Negative Correlation between UNIT_AGE and REMAINING_LEASE_YEARS:
-As expected, there is a strong negative correlation between UNIT_AGE and REMAINING_LEASE_YEARS, given that one is derived from the other. This relationship confirms that as a unit ages, its remaining lease decreases correspondingly. Since these two variables are highly collinear, it would be prudent to retain only one of them in further analysis to avoid multicollinearity issues.
 
-Positive Correlations with RESALE_PRICE:
-FLOOR_AREA_SQM shows a moderate positive correlation with RESALE_PRICE (0.63). This suggests that larger flats tend to have higher resale prices, as expected.
-FLOOR_LEVEL also has a moderate positive correlation with RESALE_PRICE (0.45), indicating that higher-floor units are often more desirable and fetch higher prices in the resale market.
+::: callout-note
+Negative Correlation between UNIT_AGE and REMAINING_LEASE_YEARS: As expected, there is a strong negative correlation between UNIT_AGE and REMAINING_LEASE_YEARS, given that one is derived from the other. This relationship confirms that as a unit ages, its remaining lease decreases correspondingly. Since these two variables are highly collinear, it would be prudent to retain only one of them in further analysis to avoid multicollinearity issues.
 
-Minimal Correlations for Most Location-Based Variables:
-Proximity to amenities such as PROX_MRT, PROX_BUS_STOP, and PROX_SUPERMARKET shows low or non-significant correlations with RESALE_PRICE. This suggests that, for this dataset, proximity to these amenities might not have a strong direct influence on resale prices.
-The count of nearby amenities, like clinics (count_clinics), hawker centers (count_hawker_center), and school zones (count_schoolzone), also shows minimal correlation with RESALE_PRICE.
+Positive Correlations with RESALE_PRICE: FLOOR_AREA_SQM shows a moderate positive correlation with RESALE_PRICE (0.63). This suggests that larger flats tend to have higher resale prices, as expected. FLOOR_LEVEL also has a moderate positive correlation with RESALE_PRICE (0.45), indicating that higher-floor units are often more desirable and fetch higher prices in the resale market.
+
+Minimal Correlations for Most Location-Based Variables: Proximity to amenities such as PROX_MRT, PROX_BUS_STOP, and PROX_SUPERMARKET shows low or non-significant correlations with RESALE_PRICE. This suggests that, for this dataset, proximity to these amenities might not have a strong direct influence on resale prices. The count of nearby amenities, like clinics (count_clinics), hawker centers (count_hawker_center), and school zones (count_schoolzone), also shows minimal correlation with RESALE_PRICE.
 :::
 
 ## 7 Building a non-spatial multiple linear regression
+
 ### 7.1 Prepare Data for Regression
+
 Remove REMAINING_LEASE_YEARS and ensure all relevant variables are formatted correctly. You might also need to convert categorical variables, such as TOWN and FLAT_MODEL, into dummy variables or factors if they’re not already.
+
 ```{r}
 # Remove the `REMAINING_LEASE_YEARS` column
 resale_new_4room <- resale_new_4room %>% select(-REMAINING_LEASE_YEARS)
@@ -688,20 +685,22 @@ test_data <- resale_new_4room[-train_index, ]
 ```
 
 ### 7.2 Building the Model on the Training Data
+
 ```{r}
 # Build the model on the training set
 train_mlr <- lm(RESALE_PRICE ~ FLOOR_AREA_SQM + UNIT_AGE+ FLOOR_LEVEL + PROX_MRT +PROX_BUS_STOP+ PROX_SUPERMARKET + count_clinics + count_hawker_center + count_schoolzone, data = train_data)
 ols_regress(train_mlr)
 
 ```
+
 ```{r}
 tbl_regression(train_mlr, intercept = TRUE)
 ```
 
-::: panel-tabset
+::: callout-note
 R-Squared (0.608): This indicates that approximately 60.8% of the variance in RESALE_PRICE is explained by the model. While this is a reasonable fit, there may still be room for improvement.
 
-Significant Predictors: Most variables are statistically significant (p-value < 0.05), meaning they contribute meaningfully to the prediction of resale prices.
+Significant Predictors: Most variables are statistically significant (p-value \< 0.05), meaning they contribute meaningfully to the prediction of resale prices.
 
 Positive Predictors: FLOOR_AREA_SQM, FLOOR_LEVEL, count_clinics, count_hawker_center, and PROX_BUS_STOP have positive coefficients, indicating that larger units, higher floors, and proximity to certain amenities like clinics and hawker centers are associated with higher resale prices.
 
@@ -711,10 +710,12 @@ Non-Significant Predictor: PROX_SUPERMARKET has a high p-value (0.908), suggesti
 :::
 
 Check for Multicollinearity
+
 ```{r}
 ols_vif_tol(train_mlr)
 ```
-::: panel-tabset
+
+::: callout-note
 The VIF (Variance Inflation Factor) values in this multicollinearity check are all well below the commonly accepted threshold of 5 (or even 10 in some cases). This means that multicollinearity is not a concern for this model, as each predictor variable shows minimal correlation with the others.
 :::
 
@@ -734,26 +735,25 @@ train_mlr2 <- lm(LOG_RESALE_PRICE ~ FLOOR_AREA_SQM + UNIT_AGE + FLOOR_LEVEL + PR
                 data = train_data2)
 ols_regress(train_mlr2)
 ```
-::: panel-tabset
-The re-fitted multiple linear regression model, using LOG_RESALE_PRICE as the dependent variable, appears to show improved performance compared to the previous model in a few key areas. 
-R-Squared: The R-squared value is now 0.617, meaning that approximately 61.7% of the variance in log resale prices is explained by the model. This is a relatively strong level of explanatory power for a real estate model.
-Adjusted R-Squared: At 0.613, this value suggests that the model remains strong even after adjusting for the number of predictors.
-RMSE: The Root Mean Square Error (RMSE) of 0.134 (on the log scale) suggests a good fit with reduced residual variance.
-AIC: A lower AIC (-859.410) indicates that this model may be preferred over previous versions, as a lower AIC generally signifies a better model fit.
+
+::: callout-note
+The re-fitted multiple linear regression model, using LOG_RESALE_PRICE as the dependent variable, appears to show improved performance compared to the previous model in a few key areas. R-Squared: The R-squared value is now 0.617, meaning that approximately 61.7% of the variance in log resale prices is explained by the model. This is a relatively strong level of explanatory power for a real estate model. Adjusted R-Squared: At 0.613, this value suggests that the model remains strong even after adjusting for the number of predictors. RMSE: The Root Mean Square Error (RMSE) of 0.134 (on the log scale) suggests a good fit with reduced residual variance. AIC: A lower AIC (-859.410) indicates that this model may be preferred over previous versions, as a lower AIC generally signifies a better model fit.
 :::
 
-
 ### 7.4 Test for Normality
+
 ```{r}
 ols_plot_resid_hist(train_mlr2)
 ```
-::: panel-tabset
+
+::: callout-note
 Symmetry: The residuals are fairly symmetric around zero, though there is a slight skew to the right. Ideally, for the normality assumption to hold fully, we would expect the histogram to be more symmetric.
 
 Approximate Normality: The shape is close to normal, with a high concentration of residuals near zero and fewer residuals at the tails. This indicates that the model does not systematically over- or under-predict across the range of data. While some deviation from normality is visible in the tails, this deviation is minor and not unusual in practical applications.
 :::
 
 ### 7.5 Test for Spatial Autocorrelation
+
 ```{r}
 mlr_res <- as.data.frame(train_mlr2$residuals)
 resale_res <- cbind(train_data2,
@@ -771,9 +771,11 @@ tm_shape(resale_res) +
             main.title.size = 1)
 tmap_mode("plot")
 ```
+
 The figure above reveal that there is sign of spatial autocorrelation.
 
 To proof that our observation is indeed true, the Moran’s I test will be performed
+
 ```{r}
 resale_sp <- as_Spatial(resale_res)
 
@@ -783,20 +785,25 @@ nb_lw <- nb2listw(nb, style = 'W')
 
 lm.morantest(train_mlr2, nb_lw)
 ```
-::: panel-tabset
+
+::: callout-note
 Moran's I Value: The observed Moran's I value is 0.4399, indicating positive spatial autocorrelation in the residuals. This suggests that the residuals are spatially clustered—neighboring locations have similar residual values. This indicates that the model may not have fully accounted for spatial dependencies.
 
-Significance Level: The p-value is < 2.2e-16, which is far below the standard threshold of 0.05. This means the result is highly statistically significant, and we can reject the null hypothesis that the residuals are randomly distributed. This further confirms the spatial clustering of the residuals.
+Significance Level: The p-value is \< 2.2e-16, which is far below the standard threshold of 0.05. This means the result is highly statistically significant, and we can reject the null hypothesis that the residuals are randomly distributed. This further confirms the spatial clustering of the residuals.
 :::
 
 ## 8.GWR & GWRF Predictive Method
+
 ### 8.1 Converting to SpatialPointsDataFrame
+
 ```{r}
 train_data_sp <- as_Spatial(train_data)
 ```
 
 ### 8.2 Computing Adaptive Bandwidth
+
 To identify the optimal bandwidth, use cross-validation (CV) within the bw.gwr() function. This step helps in determining the appropriate number of neighbors for each local regression.
+
 ```{r}
 bw_adaptive <- bw.gwr(RESALE_PRICE ~ FLOOR_AREA_SQM + UNIT_AGE+ FLOOR_LEVEL + PROX_MRT +PROX_BUS_STOP+ PROX_SUPERMARKET + count_clinics + count_hawker_center + count_schoolzone,
                       data=train_data_sp,
@@ -808,8 +815,11 @@ bw_adaptive <- bw.gwr(RESALE_PRICE ~ FLOOR_AREA_SQM + UNIT_AGE+ FLOOR_LEVEL + PR
 # Save bandwidth result for reuse
 write_rds(bw_adaptive, "data/rds/bw_adaptive.rds")
 ```
+
 ### 8.3 Constructing the GWR Model
+
 Using the saved bandwidth, fit the GWR model with an adaptive Gaussian kernel.
+
 ```{r}
 gwr_adaptive <- gwr.basic(RESALE_PRICE ~ FLOOR_AREA_SQM + UNIT_AGE+ FLOOR_LEVEL + PROX_MRT +PROX_BUS_STOP+ PROX_SUPERMARKET + count_clinics + count_hawker_center + count_schoolzone,
                           data=train_data_sp,
@@ -823,14 +833,18 @@ write_rds(gwr_adaptive, "data/rds/gwr_adaptive.rds")
 ```
 
 ### 8.4 Retrieving GWR Output
+
 Load the saved model and display the output to examine coefficient values and other diagnostics.
+
 ```{r}
 gwr_adaptive <- read_rds("data/rds/gwr_adaptive.rds")
 print(gwr_adaptive)
 ```
 
 ### 8.5 Preparing Coordinates Data
+
 Extract the x and y coordinates from the sf objects, which will be useful for spatial modeling.
+
 ```{r}
 coords_train <- st_coordinates(train_data)
 coords_test <- st_coordinates(test_data)
@@ -842,7 +856,9 @@ train_data <- train_data %>% st_drop_geometry()
 ```
 
 ### 8.6 Calibrating Random Forest Model
+
 Using the ranger package, fit a Random Forest model on train_data.
+
 ```{r}
 set.seed(1234)
 rf <- ranger(RESALE_PRICE ~ FLOOR_AREA_SQM + UNIT_AGE+ FLOOR_LEVEL + PROX_MRT +PROX_BUS_STOP+ PROX_SUPERMARKET + count_clinics + count_hawker_center + count_schoolzone,
@@ -853,7 +869,9 @@ write_rds(rf, "data/rds/rf.rds")
 ```
 
 ### 8.7Calibrating Geographical Random Forest Model
+
 Using the grf function in the SpatialML package
+
 ```{r}
 set.seed(1234)
 gwRF_adaptive <- grf(formula = RESALE_PRICE ~ FLOOR_AREA_SQM + UNIT_AGE+ FLOOR_LEVEL + PROX_MRT +PROX_BUS_STOP+ PROX_SUPERMARKET + count_clinics + count_hawker_center + count_schoolzone,
@@ -869,29 +887,27 @@ write_rds(gwRF_adaptive, "data/rds/gwRF_adaptive.rds")
 variable_importance <- gwRF_adaptive$Global.Model$variable.importance
 sort(variable_importance, decreasing = TRUE)
 ```
-::: panel-tabset
-Based on the output, the top five parameters by importance in the geographically weighted random forest model are:
-FLOOR_LEVEL
- 
-UNIT_AGE 
- 
-PROX_MRT 
 
-FLOOR_AREA_SQM 
- 
+::: callout-note
+Based on the output, the top five parameters by importance in the geographically weighted random forest model are: FLOOR_LEVEL
+
+UNIT_AGE
+
+PROX_MRT
+
+FLOOR_AREA_SQM
+
 count_hawker_center
 :::
 
 ## 9.Model Evaluation
+
 For the Model Evaluation section, assess the performance of each of your three models: GWR (Geographically Weighted Regression), GWRF (Geographically Weighted Random Forest), and MLR (Multiple Linear Regression).
 
-Model Evaluation Metrics:
-Root Mean Square Error (RMSE): Measures the average magnitude of error. A lower RMSE indicates better model accuracy.
-Mean Absolute Error (MAE): Shows the average absolute error, providing insight into the average deviation of predictions from actual values.
-R-squared (R²): Explains the proportion of variance in the dependent variable that is predictable from the independent variables.
-Adjusted R-squared: Adjusts R² for the number of predictors in the model, providing a more reliable metric when comparing models with different numbers of variables.
+Model Evaluation Metrics: Root Mean Square Error (RMSE): Measures the average magnitude of error. A lower RMSE indicates better model accuracy. Mean Absolute Error (MAE): Shows the average absolute error, providing insight into the average deviation of predictions from actual values. R-squared (R²): Explains the proportion of variance in the dependent variable that is predictable from the independent variables. Adjusted R-squared: Adjusts R² for the number of predictors in the model, providing a more reliable metric when comparing models with different numbers of variables.
 
 ### 9.1 Prepare Test Data
+
 ```{r}
 test_data2 <- test_data %>%
     mutate(LOG_RESALE_PRICE = log(RESALE_PRICE))
@@ -902,8 +918,8 @@ resale_test_nogeo <- cbind(test_data, coords_test) %>%
   st_drop_geometry()
 ```
 
-
 ### 9.2 Multiple Linear Regression
+
 ```{r}
 test_data2$PREDICT_LOG_MLR <- predict(train_mlr2, newdata = test_data2)
 
@@ -925,6 +941,7 @@ cat("MLR RMSE:", rmse_mlr, "MAE:", mae_mlr, "R_squared:", r_squared_mlr, "Adjust
 ```
 
 ### 9.3 Geographically Weighted Random Forest (GWRF)
+
 ```{r}
 gwRF_pred <- predict.grf(
   gwRF_adaptive,               # the fitted GWRF model
@@ -949,6 +966,7 @@ cat("GWRF RMSE:", rmse_gwrf, "MAE:", mae_gwrf, "R_squared:", r_squared_gwrf, "Ad
 ```
 
 ### 9.5 Evaluation_summary
+
 ```{r}
 evaluation_summary <- data.frame(
   Model = c("MLR" , "GWRF"),
@@ -960,6 +978,7 @@ evaluation_summary <- data.frame(
 
 print(evaluation_summary)
 ```
+
 A lower RMSE indicates that the GWRF model has less prediction error compared to MLR. This suggests that GWRF is more accurate in predicting the resale price.
 
 Similar to RMSE, a lower MAE in GWRF shows that on average, its predictions are closer to the actual values than those of the MLR model.
@@ -971,5 +990,3 @@ Adjusted R-squared accounts for the number of predictors in the model, giving a 
 ## 10.Conclusion
 
 The GWRF model shows superior performance in predicting resale prices, with lower RMSE and MAE values, and higher R-squared and Adjusted R-squared values. This suggests that GWRF captures more spatial variation and complex relationships in the data compared to the MLR model. The spatial nature of GWRF likely accounts for the improvement, as it can model local variations more effectively than MLR, which assumes a global relationship.
-
-
